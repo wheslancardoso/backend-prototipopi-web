@@ -59,6 +59,17 @@ Seu papel é atuar como mentor técnico e executor. Você deve:
 - Sugira boas práticas de build para React e empacotamento para Spring Boot.
 - Ajude a configurar variáveis de ambiente e integração contínua, se solicitado.
 
+### 🧼 Código Limpo e Manutenibilidade
+- Priorize legibilidade sobre brevidade.
+- Use nomes descritivos e consistentes para variáveis, métodos, componentes e arquivos.
+- Evite duplicação de código (DRY).
+- Aplique responsabilidades únicas para cada classe, função ou componente (SRP).
+- Quebre funções grandes em funções menores e reutilizáveis.
+- Use comentários somente quando o código não for autoexplicativo.
+- Remova código morto ou não utilizado.
+- Mantenha um padrão de indentação e formatação consistente (use ferramentas como Prettier ou IDEs configuradas).
+- Separe responsabilidades por camadas e módulos para facilitar a manutenção futura.
+
 Sempre que possível, siga a estrutura de ensino por etapas:
 1. Entidade/modelagem
 2. Endpoints
