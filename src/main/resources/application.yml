@@ -1,0 +1,83 @@
+server:
+    port: 8080
+    servlet:
+        context-path: /api
+
+spring:
+    application:
+        name: teatro-web-api
+
+    # Configuração do Banco de Dados
+    datasource:
+        url: jdbc:mysql://localhost:3306/teatro_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+        username: root
+        password: root
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # Configuração JPA/Hibernate
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQL8Dialect
+                format_sql: true
+                use_sql_comments: true
+
+    # Configuração de Validação
+    jackson:
+        date-format: yyyy-MM-dd HH:mm:ss
+        time-zone: America/Sao_Paulo
+
+# Configuração JWT
+jwt:
+    secret: teatro_web_api_secret_key_2024_muito_segura_e_unica_para_producao
+    expiration: 86400000 # 24 horas em millisegundos
+
+# Configuração Swagger/OpenAPI
+springdoc:
+    api-docs:
+        path: /api-docs
+    swagger-ui:
+        path: /swagger-ui.html
+        operations-sorter: method
+    info:
+        title: Sistema de Teatro API
+        description: API REST para gerenciamento de eventos teatrais, sessões e vendas de ingressos
+        version: 1.0.0
+        contact:
+            name: Equipe de Desenvolvimento
+            email: dev@teatro.com
+
+# Configuração de Logging
+logging:
+    level:
+        com.teatro: DEBUG
+        org.springframework.security: DEBUG
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+        file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file:
+        name: logs/teatro-api.log
+
+# Configurações Customizadas do Sistema
+teatro:
+    # Horários fixos por período
+    horarios:
+        manha: ["08:00", "09:30", "11:00"]
+        tarde: ["13:00", "14:30", "16:00"]
+        noite: ["18:00", "19:30", "21:00"]
+
+    # Configurações de poltronas
+    poltronas:
+        timeout-reserva: 300000 # 5 minutos em millisegundos
+
+    # Configurações de pagamento
+    pagamento:
+        pix:
+            habilitado: true
+        cartao:
+            habilitado: true
