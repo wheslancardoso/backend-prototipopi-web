@@ -22,6 +22,12 @@ import com.teatro.exception.UsuarioJaExisteException;
 import com.teatro.exception.UsuarioNaoEncontradoException;
 import com.teatro.model.Usuario;
 import com.teatro.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
@@ -34,8 +40,9 @@ import jakarta.validation.Valid;
  * /api/usuarios/recuperar-senha - Recuperar senha
  */
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/usuarios")
 @CrossOrigin(origins = "*") // Configurar CORS adequadamente em produção
+@Tag(name = "Usuários", description = "Endpoints para gerenciamento de usuários e autenticação")
 public class UsuarioController {
 
   @Autowired
@@ -48,6 +55,13 @@ public class UsuarioController {
    * @return Token JWT e dados do usuário
    */
   @PostMapping("/login")
+  @Operation(summary = "Autenticar usuário",
+      description = "Realiza autenticação do usuário usando CPF/email e senha")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+          content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+      @ApiResponse(responseCode = "401", description = "Credenciais inválidas"),
+      @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")})
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
     try {
       Usuario usuario = usuarioService.autenticarUsuario(loginRequest.getIdentificador(),
@@ -72,6 +86,12 @@ public class UsuarioController {
    * @return Usuário cadastrado
    */
   @PostMapping("/cadastro")
+  @Operation(summary = "Cadastrar usuário", description = "Cria um novo usuário no sistema")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso",
+          content = @Content(schema = @Schema(implementation = UsuarioDTO.class))),
+      @ApiResponse(responseCode = "409", description = "CPF ou email já cadastrado"),
+      @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")})
   public ResponseEntity<UsuarioDTO> cadastrar(@Valid @RequestBody UsuarioDTO usuarioDTO) {
     try {
       Usuario usuario = converterParaModel(usuarioDTO);
@@ -88,6 +108,11 @@ public class UsuarioController {
    * @return Lista de usuários ativos
    */
   @GetMapping
+  @Operation(summary = "Listar usuários",
+      description = "Retorna lista de todos os usuários ativos no sistema")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Lista de usuários retornada com sucesso",
+          content = @Content(schema = @Schema(implementation = UsuarioDTO.class)))})
   public ResponseEntity<List<UsuarioDTO>> listarUsuarios() {
     List<Usuario> usuarios = usuarioService.listarUsuariosAtivos();
     List<UsuarioDTO> usuariosDTO =
@@ -102,6 +127,12 @@ public class UsuarioController {
    * @return Usuário encontrado
    */
   @GetMapping("/{id}")
+  @Operation(summary = "Buscar usuário por ID",
+      description = "Retorna dados de um usuário específico pelo ID")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Usuário encontrado",
+          content = @Content(schema = @Schema(implementation = UsuarioDTO.class))),
+      @ApiResponse(responseCode = "404", description = "Usuário não encontrado")})
   public ResponseEntity<UsuarioDTO> buscarPorId(@PathVariable Long id) {
     try {
       Usuario usuario = usuarioService.buscarPorId(id);
@@ -119,6 +150,13 @@ public class UsuarioController {
    * @return Usuário atualizado
    */
   @PutMapping("/{id}")
+  @Operation(summary = "Atualizar usuário", description = "Atualiza dados de um usuário existente")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso",
+          content = @Content(schema = @Schema(implementation = UsuarioDTO.class))),
+      @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+      @ApiResponse(responseCode = "409", description = "CPF ou email já cadastrado"),
+      @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")})
   public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id,
       @Valid @RequestBody UsuarioDTO usuarioDTO) {
     try {
@@ -139,6 +177,11 @@ public class UsuarioController {
    * @return Status da operação
    */
   @DeleteMapping("/{id}")
+  @Operation(summary = "Remover usuário",
+      description = "Desativa um usuário no sistema (soft delete)")
+  @ApiResponses(
+      value = {@ApiResponse(responseCode = "204", description = "Usuário removido com sucesso"),
+          @ApiResponse(responseCode = "404", description = "Usuário não encontrado")})
   public ResponseEntity<Void> remover(@PathVariable Long id) {
     try {
       // Desativa o usuário em vez de remover
@@ -157,6 +200,11 @@ public class UsuarioController {
    * @return Status da operação
    */
   @PostMapping("/{id}/alterar-senha")
+  @Operation(summary = "Alterar senha", description = "Altera a senha de um usuário")
+  @ApiResponses(
+      value = {@ApiResponse(responseCode = "200", description = "Senha alterada com sucesso"),
+          @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+          @ApiResponse(responseCode = "401", description = "Senha atual incorreta")})
   public ResponseEntity<Void> alterarSenha(@PathVariable Long id,
       @RequestBody AlterarSenhaRequest request) {
     try {
@@ -176,6 +224,11 @@ public class UsuarioController {
    * @return Status da operação
    */
   @PostMapping("/recuperar-senha")
+  @Operation(summary = "Recuperar senha",
+      description = "Recupera senha de um usuário usando CPF e email")
+  @ApiResponses(
+      value = {@ApiResponse(responseCode = "200", description = "Senha recuperada com sucesso"),
+          @ApiResponse(responseCode = "404", description = "Usuário não encontrado")})
   public ResponseEntity<Void> recuperarSenha(@RequestBody RecuperarSenhaRequest request) {
     try {
       usuarioService.recuperarSenha(request.getCpf(), request.getEmail(), request.getNovaSenha());

@@ -19,14 +19,16 @@ import com.teatro.exception.AreaJaExisteException;
 import com.teatro.exception.AreaNaoEncontradaException;
 import com.teatro.model.Area;
 import com.teatro.service.AreaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
  * Controller para operações relacionadas a áreas do teatro
  */
 @RestController
-@RequestMapping("/api/areas")
+@RequestMapping("/areas")
 @CrossOrigin(origins = "*")
+@Tag(name = "Áreas", description = "Endpoints para gerenciamento de áreas do teatro")
 public class AreaController {
 
   @Autowired

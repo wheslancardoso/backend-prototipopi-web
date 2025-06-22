@@ -81,9 +81,8 @@ public interface AreaRepository extends JpaRepository<Area, Long> {
     /**
      * Busca áreas que possuem poltronas disponíveis para uma sessão
      */
-    @Query("SELECT a FROM Area a " + "WHERE a.ativo = true " + "AND a.id IN ("
-            + "SELECT DISTINCT sa.area.id FROM Sessao s " + "JOIN s.areas sa "
-            + "WHERE s.id = :sessaoId " + "AND s.ativo = true) " + "AND a.capacidadeTotal > ("
+    @Query("SELECT DISTINCT a FROM Area a " + "JOIN a.sessoes s " + "WHERE a.ativo = true "
+            + "AND s.id = :sessaoId " + "AND s.ativo = true " + "AND a.capacidadeTotal > ("
             + "SELECT COALESCE(COUNT(i), 0) FROM Ingresso i " + "WHERE i.sessao.id = :sessaoId "
             + "AND i.area.id = a.id " + "AND i.status = 'VALIDO')")
     List<Area> findAreasComPoltronasDisponiveis(@Param("sessaoId") Long sessaoId);
@@ -92,11 +91,10 @@ public interface AreaRepository extends JpaRepository<Area, Long> {
      * Busca áreas com maior ocupação para uma sessão
      */
     @Query("SELECT a, " + "ROUND((COUNT(i) * 100.0 / a.capacidadeTotal), 2) as percentualOcupacao "
-            + "FROM Area a "
+            + "FROM Area a " + "JOIN a.sessoes s "
             + "LEFT JOIN Ingresso i ON i.area.id = a.id AND i.sessao.id = :sessaoId AND i.status = 'VALIDO' "
-            + "WHERE a.ativo = true " + "AND a.id IN ("
-            + "SELECT DISTINCT sa.area.id FROM Sessao s " + "JOIN s.areas sa "
-            + "WHERE s.id = :sessaoId) " + "GROUP BY a " + "ORDER BY percentualOcupacao DESC")
+            + "WHERE a.ativo = true " + "AND s.id = :sessaoId " + "GROUP BY a "
+            + "ORDER BY percentualOcupacao DESC")
     List<Object[]> findAreasComMaiorOcupacao(@Param("sessaoId") Long sessaoId);
 
     /**

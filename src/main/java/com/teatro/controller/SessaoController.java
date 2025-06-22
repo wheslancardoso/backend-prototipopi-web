@@ -22,26 +22,23 @@ import com.teatro.exception.SessaoJaExisteException;
 import com.teatro.exception.SessaoNaoEncontradaException;
 import com.teatro.model.Sessao;
 import com.teatro.service.SessaoService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
  * Controller para operações relacionadas a sessões
  * 
- * Endpoints:
- * - POST /api/sessoes - Cadastrar sessão
- * - GET /api/sessoes - Listar sessões
- * - GET /api/sessoes/{id} - Buscar sessão por ID
- * - PUT /api/sessoes/{id} - Atualizar sessão
- * - DELETE /api/sessoes/{id} - Remover sessão
- * - GET /api/sessoes/ativas - Listar sessões ativas
- * - GET /api/sessoes/evento/{eventoId} - Listar sessões por evento
- * - GET /api/sessoes/futuras - Listar sessões futuras
- * - GET /api/sessoes/disponiveis - Listar sessões disponíveis para compra
- * - PUT /api/sessoes/{id}/status - Alterar status da sessão
+ * Endpoints: - POST /api/sessoes - Cadastrar sessão - GET /api/sessoes - Listar sessões - GET
+ * /api/sessoes/{id} - Buscar sessão por ID - PUT /api/sessoes/{id} - Atualizar sessão - DELETE
+ * /api/sessoes/{id} - Remover sessão - GET /api/sessoes/ativas - Listar sessões ativas - GET
+ * /api/sessoes/evento/{eventoId} - Listar sessões por evento - GET /api/sessoes/futuras - Listar
+ * sessões futuras - GET /api/sessoes/disponiveis - Listar sessões disponíveis para compra - PUT
+ * /api/sessoes/{id}/status - Alterar status da sessão
  */
 @RestController
-@RequestMapping("/api/sessoes")
+@RequestMapping("/sessoes")
 @CrossOrigin(origins = "*")
+@Tag(name = "Sessões", description = "Endpoints para gerenciamento de sessões teatrais")
 public class SessaoController {
 
     @Autowired
@@ -72,9 +69,8 @@ public class SessaoController {
     @GetMapping
     public ResponseEntity<List<SessaoDTO>> listarSessoes() {
         List<Sessao> sessoes = sessaoService.listarSessoesAtivas();
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -86,9 +82,8 @@ public class SessaoController {
     @GetMapping("/ativas")
     public ResponseEntity<List<SessaoDTO>> listarSessoesAtivas() {
         List<Sessao> sessoes = sessaoService.listarSessoesAtivas();
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -101,9 +96,8 @@ public class SessaoController {
     @GetMapping("/evento/{eventoId}")
     public ResponseEntity<List<SessaoDTO>> listarSessoesPorEvento(@PathVariable Long eventoId) {
         List<Sessao> sessoes = sessaoService.listarSessoesPorEvento(eventoId);
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -114,11 +108,11 @@ public class SessaoController {
      * @return Lista de sessões ativas do evento
      */
     @GetMapping("/evento/{eventoId}/ativas")
-    public ResponseEntity<List<SessaoDTO>> listarSessoesAtivasPorEvento(@PathVariable Long eventoId) {
+    public ResponseEntity<List<SessaoDTO>> listarSessoesAtivasPorEvento(
+            @PathVariable Long eventoId) {
         List<Sessao> sessoes = sessaoService.listarSessoesAtivasPorEvento(eventoId);
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -133,9 +127,8 @@ public class SessaoController {
         try {
             Sessao.TipoSessao tipo = Sessao.TipoSessao.valueOf(tipoSessao.toUpperCase());
             List<Sessao> sessoes = sessaoService.listarSessoesPorTipo(tipo);
-            List<SessaoDTO> sessoesDTO = sessoes.stream()
-                .map(this::converterParaDTO)
-                .collect(Collectors.toList());
+            List<SessaoDTO> sessoesDTO =
+                    sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
             return ResponseEntity.ok(sessoesDTO);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -152,9 +145,8 @@ public class SessaoController {
     public ResponseEntity<List<SessaoDTO>> listarSessoesPorData(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data) {
         List<Sessao> sessoes = sessaoService.listarSessoesPorData(data);
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -166,9 +158,8 @@ public class SessaoController {
     @GetMapping("/futuras")
     public ResponseEntity<List<SessaoDTO>> listarSessoesFuturas() {
         List<Sessao> sessoes = sessaoService.listarSessoesFuturas();
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -180,9 +171,8 @@ public class SessaoController {
     @GetMapping("/disponiveis")
     public ResponseEntity<List<SessaoDTO>> listarSessoesDisponiveisParaCompra() {
         List<Sessao> sessoes = sessaoService.listarSessoesDisponiveisParaCompra();
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -193,11 +183,11 @@ public class SessaoController {
      * @return Lista de sessões disponíveis para compra
      */
     @GetMapping("/disponiveis/evento/{eventoId}")
-    public ResponseEntity<List<SessaoDTO>> listarSessoesDisponiveisParaCompraPorEvento(@PathVariable Long eventoId) {
+    public ResponseEntity<List<SessaoDTO>> listarSessoesDisponiveisParaCompraPorEvento(
+            @PathVariable Long eventoId) {
         List<Sessao> sessoes = sessaoService.listarSessoesDisponiveisParaCompraPorEvento(eventoId);
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -225,7 +215,8 @@ public class SessaoController {
      * @return Sessão atualizada
      */
     @PutMapping("/{id}")
-    public ResponseEntity<SessaoDTO> atualizar(@PathVariable Long id, @Valid @RequestBody SessaoDTO sessaoDTO) {
+    public ResponseEntity<SessaoDTO> atualizar(@PathVariable Long id,
+            @Valid @RequestBody SessaoDTO sessaoDTO) {
         try {
             Sessao sessao = converterParaModel(sessaoDTO);
             Sessao sessaoAtualizada = sessaoService.atualizarSessao(id, sessao);
@@ -261,7 +252,8 @@ public class SessaoController {
      * @return Sessão atualizada
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<SessaoDTO> alterarStatus(@PathVariable Long id, @RequestParam boolean ativo) {
+    public ResponseEntity<SessaoDTO> alterarStatus(@PathVariable Long id,
+            @RequestParam boolean ativo) {
         try {
             Sessao sessao = sessaoService.alterarStatusSessao(id, ativo);
             return ResponseEntity.ok(converterParaDTO(sessao));
@@ -282,9 +274,8 @@ public class SessaoController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim) {
         List<Sessao> sessoes = sessaoService.listarSessoesPorPeriodo(dataInicio, dataFim);
-        List<SessaoDTO> sessoesDTO = sessoes.stream()
-            .map(this::converterParaDTO)
-            .collect(Collectors.toList());
+        List<SessaoDTO> sessoesDTO =
+                sessoes.stream().map(this::converterParaDTO).collect(Collectors.toList());
         return ResponseEntity.ok(sessoesDTO);
     }
 
@@ -339,10 +330,10 @@ public class SessaoController {
         sessao.setDataSessao(sessaoDTO.getDataSessao());
         sessao.setHorario(sessaoDTO.getHorario());
         sessao.setAtivo(sessaoDTO.getAtivo());
-        
+
         // TODO: Carregar evento se eventoId for fornecido
         // sessao.setEvento(eventoService.buscarPorId(sessaoDTO.getEventoId()));
-        
+
         return sessao;
     }
-} 
+}

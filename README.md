@@ -2,7 +2,7 @@
 
 ## 📋 Visão Geral
 
-Sistema de gerenciamento de eventos teatrais desenvolvido com **Spring Boot** e **MySQL**. O projeto implementa uma API REST completa para venda de ingressos com lógica avançada de ocupação de poltronas e horários dinâmicos.
+Sistema de gerenciamento de eventos teatrais, sessões, áreas e venda de ingressos desenvolvido com Spring Boot.
 
 ## 🚀 Status do Projeto
 
@@ -256,3 +256,167 @@ O projeto está **pronto para a Etapa 2** com uma base sólida e todas as funcio
 ---
 
 **Próximo passo**: Implementar DTOs, Services e Controllers para expor a API REST.
+
+## 📚 Documentação da API
+
+### Swagger UI
+
+Acesse a documentação interativa da API em:
+
+-   **URL**: http://localhost:8080/api/swagger-ui.html
+-   **Descrição**: Interface gráfica para testar todos os endpoints
+
+### OpenAPI JSON
+
+Especificação OpenAPI 3.0 disponível em:
+
+-   **URL**: http://localhost:8080/api/api-docs
+-   **Formato**: JSON para integração com ferramentas externas
+
+### Endpoints Principais
+
+#### 🔐 Autenticação
+
+-   `POST /api/usuarios/login` - Login de usuário
+-   `POST /api/usuarios/cadastro` - Cadastro de usuário
+-   `POST /api/usuarios/recuperar-senha` - Recuperação de senha
+
+#### 🎭 Eventos
+
+-   `GET /api/eventos` - Listar eventos
+-   `GET /api/eventos/ativos` - Listar eventos ativos
+-   `POST /api/eventos` - Cadastrar evento
+-   `PUT /api/eventos/{id}` - Atualizar evento
+-   `DELETE /api/eventos/{id}` - Remover evento
+
+#### 🎫 Sessões
+
+-   `GET /api/sessoes` - Listar sessões
+-   `GET /api/sessoes/evento/{eventoId}` - Sessões por evento
+-   `POST /api/sessoes` - Cadastrar sessão
+-   `PUT /api/sessoes/{id}` - Atualizar sessão
+
+#### 🏛️ Áreas
+
+-   `GET /api/areas` - Listar áreas
+-   `GET /api/areas/sessao/{sessaoId}` - Áreas por sessão
+-   `POST /api/areas` - Cadastrar área
+-   `PUT /api/areas/{id}` - Atualizar área
+
+#### 🛒 Ingressos
+
+-   `POST /api/ingressos` - Comprar ingresso
+-   `GET /api/ingressos/usuario/{usuarioId}` - Ingressos por usuário
+-   `GET /api/ingressos/sessao/{sessaoId}` - Ingressos por sessão
+-   `POST /api/ingressos/verificar-disponibilidade` - Verificar poltronas disponíveis
+-   `GET /api/ingressos/validar/{codigo}` - Validar ingresso por código
+
+## 🔧 Configurações
+
+### application.yml
+
+```yaml
+server:
+    port: 8080
+    servlet:
+        context-path: /api
+
+spring:
+    datasource:
+        url: jdbc:mysql://localhost:3306/teatro_db
+        username: root
+        password: root
+
+jwt:
+    secret: sua_chave_secreta_aqui
+    expiration: 86400000 # 24 horas
+```
+
+### Swagger/OpenAPI
+
+```yaml
+springdoc:
+    api-docs:
+        path: /api-docs
+    swagger-ui:
+        path: /swagger-ui.html
+```
+
+## 🧪 Testando a API
+
+### 1. Acesse o Swagger UI
+
+-   Abra http://localhost:8080/api/swagger-ui.html
+-   Explore os endpoints disponíveis
+
+### 2. Teste com Postman/Insomnia
+
+-   Importe a especificação OpenAPI
+-   Teste os endpoints individualmente
+
+### 3. Exemplo de Login
+
+```bash
+curl -X POST "http://localhost:8080/api/usuarios/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identificador": "admin@teatro.com",
+    "senha": "admin123"
+  }'
+```
+
+## 📊 Dados de Exemplo
+
+### Usuários Padrão
+
+-   **Admin**: admin@teatro.com / admin123
+-   **Usuário**: usuario@teatro.com / usuario123
+
+### Eventos Fixos
+
+-   Hamlet
+-   O Fantasma da Opera
+-   O Auto da Compadecida
+
+### Áreas e Preços
+
+-   Plateia A: R$ 40,00 (25 poltronas)
+-   Plateia B: R$ 60,00 (100 poltronas)
+-   Camarotes: R$ 80,00 (10 poltronas cada)
+-   Frisas: R$ 120,00 (5 poltronas cada)
+-   Balcão Nobre: R$ 250,00 (50 poltronas)
+
+## 🔒 Segurança
+
+-   Autenticação JWT
+-   Hash de senhas com BCrypt
+-   Validação de entrada (Bean Validation)
+-   Controle de acesso por roles
+-   CORS configurado
+
+## 🚀 Próximos Passos
+
+1. **Frontend React**: Desenvolvimento da interface web
+2. **Sistema de Pagamento**: Integração com PIX e cartão
+3. **Notificações**: Email e SMS
+4. **Reservas Temporárias**: Timeout para poltronas selecionadas
+5. **Relatórios Avançados**: Exportação PDF/Excel
+6. **Cache Redis**: Otimização de performance
+7. **Testes Automatizados**: Cobertura completa
+8. **Deploy**: Configuração de produção
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+## 👥 Contribuição
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
+
+---
+
+**Desenvolvido com ❤️ para o aprendizado de tecnologias web modernas**
