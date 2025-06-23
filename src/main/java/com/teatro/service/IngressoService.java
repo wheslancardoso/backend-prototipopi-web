@@ -74,7 +74,7 @@ public class IngressoService {
     ingresso.setValor(valor);
     ingresso.setDataCompra(LocalDateTime.now());
     ingresso.setCodigo("ING-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-    ingresso.setStatus(Ingresso.StatusIngresso.VALIDO);
+    ingresso.setStatus(Ingresso.Status.RESERVADO);
 
     return ingressoRepository.save(ingresso);
   }

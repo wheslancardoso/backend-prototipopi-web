@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.teatro.model.Ingresso;
-import com.teatro.model.Ingresso.StatusIngresso;
+import com.teatro.model.Ingresso.Status;
 
 /**
  * Repository para operações de persistência da entidade Ingresso
@@ -31,7 +31,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     /**
      * Busca ingressos válidos por usuário
      */
-    List<Ingresso> findByUsuarioIdAndStatus(Long usuarioId, StatusIngresso status);
+    List<Ingresso> findByUsuarioIdAndStatus(Long usuarioId, Status status);
 
     /**
      * Busca ingressos por sessão
@@ -41,7 +41,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     /**
      * Busca ingressos válidos por sessão
      */
-    List<Ingresso> findBySessaoIdAndStatus(Long sessaoId, StatusIngresso status);
+    List<Ingresso> findBySessaoIdAndStatus(Long sessaoId, Status status);
 
     /**
      * Busca ingressos por área
@@ -56,7 +56,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     /**
      * Busca ingressos válidos por sessão e área
      */
-    List<Ingresso> findBySessaoIdAndAreaIdAndStatus(Long sessaoId, Long areaId, StatusIngresso status);
+    List<Ingresso> findBySessaoIdAndAreaIdAndStatus(Long sessaoId, Long areaId, Status status);
 
     /**
      * Busca ingresso por código
@@ -83,7 +83,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
            "WHERE i.sessao.id = :sessaoId " +
            "AND i.area.id = :areaId " +
            "AND i.numeroPoltrona = :numeroPoltrona " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     boolean isPoltronaOcupada(@Param("sessaoId") Long sessaoId,
                              @Param("areaId") Long areaId,
                              @Param("numeroPoltrona") Integer numeroPoltrona);
@@ -94,7 +94,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     @Query("SELECT i.numeroPoltrona FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
            "AND i.area.id = :areaId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     List<Integer> findPoltronasOcupadas(@Param("sessaoId") Long sessaoId,
                                        @Param("areaId") Long areaId);
 
@@ -127,7 +127,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
            "SELECT i.numeroPoltrona FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
            "AND i.area.id = :areaId " +
-           "AND i.status = 'VALIDO')")
+           "AND i.status IN ('RESERVADO', 'PAGO'))")
     List<Integer> findPoltronasDisponiveis(@Param("sessaoId") Long sessaoId,
                                           @Param("areaId") Long areaId);
 
@@ -136,7 +136,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
      */
     @Query("SELECT COUNT(i) FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     long countIngressosVendidosPorSessao(@Param("sessaoId") Long sessaoId);
 
     /**
@@ -145,7 +145,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     @Query("SELECT COUNT(i) FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
            "AND i.area.id = :areaId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     long countIngressosVendidosPorSessaoEArea(@Param("sessaoId") Long sessaoId,
                                              @Param("areaId") Long areaId);
 
@@ -154,7 +154,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
      */
     @Query("SELECT COALESCE(SUM(i.valor), 0) FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     BigDecimal calcularFaturamentoPorSessao(@Param("sessaoId") Long sessaoId);
 
     /**
@@ -163,7 +163,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     @Query("SELECT COALESCE(SUM(i.valor), 0) FROM Ingresso i " +
            "WHERE i.sessao.id = :sessaoId " +
            "AND i.area.id = :areaId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     BigDecimal calcularFaturamentoPorSessaoEArea(@Param("sessaoId") Long sessaoId,
                                                 @Param("areaId") Long areaId);
 
@@ -181,7 +181,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
      */
     @Query("SELECT i FROM Ingresso i " +
            "WHERE i.sessao.dataSessao BETWEEN :dataInicio AND :dataFim " +
-           "AND i.status = 'VALIDO' " +
+           "AND i.status IN ('RESERVADO', 'PAGO') " +
            "ORDER BY i.sessao.dataSessao, i.sessao.horario")
     List<Ingresso> findIngressosValidosPorPeriodo(@Param("dataInicio") LocalDate dataInicio,
                                                  @Param("dataFim") LocalDate dataFim);
@@ -203,7 +203,7 @@ public interface IngressoRepository extends JpaRepository<Ingresso, Long> {
     @Query("SELECT COUNT(i) > 0 FROM Ingresso i " +
            "WHERE i.usuario.id = :usuarioId " +
            "AND i.sessao.id = :sessaoId " +
-           "AND i.status = 'VALIDO'")
+           "AND i.status IN ('RESERVADO', 'PAGO')")
     boolean usuarioJaComprouParaSessao(@Param("usuarioId") Long usuarioId,
                                       @Param("sessaoId") Long sessaoId);
 } 

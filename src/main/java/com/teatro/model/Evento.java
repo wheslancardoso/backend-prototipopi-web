@@ -1,23 +1,32 @@
 package com.teatro.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Entidade que representa um evento teatral
  * 
- * Um evento pode ter múltiplas sessões em diferentes datas e horários.
- * Exemplos: Hamlet, O Fantasma da Opera, O Auto da Compadecida
+ * Um evento pode ter múltiplas sessões em diferentes datas e horários. Exemplos: Hamlet, O Fantasma
+ * da Opera, O Auto da Compadecida
  */
 @Entity
 @Table(name = "eventos")
@@ -38,8 +47,12 @@ public class Evento {
     @Column(name = "descricao", columnDefinition = "TEXT")
     private String descricao;
 
+    @Column(name = "poster", length = 255)
+    private String poster;
+
+    @Positive(message = "Duração deve ser positiva")
     @Column(name = "duracao_minutos")
-    private Integer duracaoMinutos;
+    private Integer duracaoMinutos = 120;
 
     @Column(name = "classificacao_indicativa")
     private String classificacaoIndicativa;
@@ -68,6 +81,18 @@ public class Evento {
     public Evento(String nome, String descricao) {
         this.nome = nome;
         this.descricao = descricao;
+        this.ativo = true;
+        this.duracaoMinutos = 120;
+    }
+
+    /**
+     * Construtor para criação de evento completo
+     */
+    public Evento(String nome, String descricao, String poster, Integer duracaoMinutos) {
+        this.nome = nome;
+        this.descricao = descricao;
+        this.poster = poster;
+        this.duracaoMinutos = duracaoMinutos != null ? duracaoMinutos : 120;
         this.ativo = true;
     }
 
@@ -98,8 +123,57 @@ public class Evento {
      * Retorna apenas as sessões ativas do evento
      */
     public List<Sessao> getSessoesAtivas() {
+        return this.sessoes.stream().filter(Sessao::isAtiva).toList();
+    }
+
+    /**
+     * Retorna apenas as sessões futuras do evento
+     */
+    public List<Sessao> getSessoesFuturas() {
+        LocalDateTime agora = LocalDateTime.now();
         return this.sessoes.stream()
-                .filter(Sessao::isAtiva)
+                .filter(s -> s.isAtiva() && s.getDataSessao().isAfter(agora.toLocalDate()))
                 .toList();
     }
-} 
+
+    /**
+     * Retorna apenas as sessões passadas do evento
+     */
+    public List<Sessao> getSessoesPassadas() {
+        LocalDateTime agora = LocalDateTime.now();
+        return this.sessoes.stream().filter(s -> s.getDataSessao().isBefore(agora.toLocalDate()))
+                .toList();
+    }
+
+    /**
+     * Ativa o evento
+     */
+    public void ativar() {
+        this.ativo = true;
+    }
+
+    /**
+     * Desativa o evento
+     */
+    public void desativar() {
+        this.ativo = false;
+    }
+
+    /**
+     * Retorna a duração formatada em horas e minutos
+     */
+    public String getDuracaoFormatada() {
+        if (this.duracaoMinutos == null) {
+            return "120 min";
+        }
+
+        int horas = this.duracaoMinutos / 60;
+        int minutos = this.duracaoMinutos % 60;
+
+        if (horas > 0) {
+            return String.format("%dh %dmin", horas, minutos);
+        } else {
+            return String.format("%d min", minutos);
+        }
+    }
+}

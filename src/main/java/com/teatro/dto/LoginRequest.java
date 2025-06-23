@@ -1,21 +1,40 @@
 package com.teatro.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * DTO para requisição de login
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class LoginRequest {
 
-  @NotBlank(message = "CPF ou email é obrigatório")
-  private String identificador; // CPF ou email
+  @NotBlank(message = "CPF ou Email é obrigatório")
+  private String identificador; // CPF ou Email
 
   @NotBlank(message = "Senha é obrigatória")
   private String senha;
+
+  // Construtores
+  public LoginRequest() {}
+
+  public LoginRequest(String identificador, String senha) {
+    this.identificador = identificador;
+    this.senha = senha;
+  }
+
+  // Getters e Setters
+  public String getIdentificador() {
+    return identificador;
+  }
+
+  public void setIdentificador(String identificador) {
+    this.identificador = identificador;
+  }
+
+  public String getSenha() {
+    return senha;
+  }
+
+  public void setSenha(String senha) {
+    this.senha = senha;
+  }
 }

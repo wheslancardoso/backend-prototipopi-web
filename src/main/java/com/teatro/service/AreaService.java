@@ -1,9 +1,11 @@
 package com.teatro.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teatro.dto.AreaDTO;
 import com.teatro.exception.AreaJaExisteException;
 import com.teatro.exception.AreaNaoEncontradaException;
 import com.teatro.model.Area;
@@ -16,37 +18,54 @@ public class AreaService {
   @Autowired
   private AreaRepository areaRepository;
 
-  public Area cadastrarArea(Area area) {
-    if (areaRepository.existsByNome(area.getNome())) {
-      throw new AreaJaExisteException("Área já cadastrada: " + area.getNome());
+  public AreaDTO cadastrarArea(AreaDTO areaDTO) {
+    if (areaRepository.existsByNome(areaDTO.getNome())) {
+      throw new AreaJaExisteException("Área já cadastrada: " + areaDTO.getNome());
     }
-    return areaRepository.save(area);
+
+    Area area = areaDTO.toEntity();
+    Area areaSalva = areaRepository.save(area);
+    return new AreaDTO(areaSalva);
   }
 
-  public List<Area> listarTodasAreas() {
-    return areaRepository.findAll();
+  public List<AreaDTO> listarTodasAreas() {
+    return areaRepository.findAll().stream().map(AreaDTO::new).collect(Collectors.toList());
   }
 
-  public Area buscarPorId(Long id) {
-    return areaRepository.findById(id)
+  public AreaDTO buscarPorId(Long id) {
+    Area area = areaRepository.findById(id)
         .orElseThrow(() -> new AreaNaoEncontradaException("Área não encontrada com ID: " + id));
+    return new AreaDTO(area);
   }
 
-  public Area atualizarArea(Long id, Area area) {
-    Area existente = buscarPorId(id);
-    if (!existente.getNome().equals(area.getNome())
-        && areaRepository.existsByNome(area.getNome())) {
-      throw new AreaJaExisteException("Área já cadastrada: " + area.getNome());
+  public AreaDTO atualizarArea(Long id, AreaDTO areaDTO) {
+    Area existente = buscarPorId(id).toEntity();
+    if (!existente.getNome().equals(areaDTO.getNome())
+        && areaRepository.existsByNome(areaDTO.getNome())) {
+      throw new AreaJaExisteException("Área já cadastrada: " + areaDTO.getNome());
     }
-    existente.setNome(area.getNome());
-    existente.setPreco(area.getPreco());
-    existente.setCapacidadeTotal(area.getCapacidadeTotal());
-    existente.setDescricao(area.getDescricao());
-    return areaRepository.save(existente);
+
+    existente.setNome(areaDTO.getNome());
+    existente.setPreco(areaDTO.getPreco());
+    existente.setCapacidadeTotal(areaDTO.getCapacidadeTotal());
+    existente.setDescricao(areaDTO.getDescricao());
+
+    Area areaAtualizada = areaRepository.save(existente);
+    return new AreaDTO(areaAtualizada);
   }
 
   public void removerArea(Long id) {
-    Area area = buscarPorId(id);
+    Area area = buscarPorId(id).toEntity();
     areaRepository.delete(area);
+  }
+
+  public List<AreaDTO> listarAreasPorSessao(Long sessaoId) {
+    // TODO: Implementar lógica para buscar áreas de uma sessão específica
+    return areaRepository.findAll().stream().map(AreaDTO::new).collect(Collectors.toList());
+  }
+
+  public List<AreaDTO> listarAreasDisponiveisParaCompra(Long sessaoId) {
+    // TODO: Implementar lógica para buscar áreas disponíveis para compra
+    return areaRepository.findAll().stream().map(AreaDTO::new).collect(Collectors.toList());
   }
 }

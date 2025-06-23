@@ -1,27 +1,39 @@
 package com.teatro.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Entidade que representa uma sessão de um evento teatral
  * 
- * Implementa a lógica de horários dinâmicos:
- * - Horários fixos por período (Manhã, Tarde, Noite)
- * - Disponibilidade baseada na data e hora atual
- * - Validação de datas passadas
+ * Implementa a lógica de horários dinâmicos: - Horários fixos por período (Manhã, Tarde, Noite) -
+ * Disponibilidade baseada na data e hora atual - Validação de datas passadas
  */
 @Entity
 @Table(name = "sessoes")
@@ -51,8 +63,8 @@ public class Sessao {
     @Column(name = "horario", nullable = false)
     private LocalTime horario;
 
-    @Column(name = "ativo", nullable = false)
-    private Boolean ativo = true;
+    @Column(name = "ativa", nullable = false)
+    private Boolean ativa = true;
 
     @CreatedDate
     @Column(name = "data_criacao", nullable = false, updatable = false)
@@ -69,24 +81,29 @@ public class Sessao {
 
     // Relacionamento com Áreas (N:N)
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "sessoes_areas",
-        joinColumns = @JoinColumn(name = "sessao_id"),
-        inverseJoinColumns = @JoinColumn(name = "area_id")
-    )
+    @JoinTable(name = "sessoes_areas", joinColumns = @JoinColumn(name = "sessao_id"),
+            inverseJoinColumns = @JoinColumn(name = "area_id"))
     private List<Area> areas = new ArrayList<>();
 
     // Relacionamento com Ingressos (1:N)
     @OneToMany(mappedBy = "sessao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Ingresso> ingressos = new ArrayList<>();
 
+    // Relacionamento com Reservas (1:N)
+    @OneToMany(mappedBy = "sessao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Reserva> reservas = new ArrayList<>();
+
+    // Relacionamento com Avaliações (1:N)
+    @OneToMany(mappedBy = "sessao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Avaliacao> avaliacoes = new ArrayList<>();
+
     /**
      * Enum que define os tipos de sessão e seus horários fixos
      */
     public enum TipoSessao {
-        MANHA("Manhã", List.of("08:00", "09:30", "11:00")),
-        TARDE("Tarde", List.of("13:00", "14:30", "16:00")),
-        NOITE("Noite", List.of("18:00", "19:30", "21:00"));
+        MANHA("Manhã", List.of("08:00", "09:30", "11:00")), TARDE("Tarde",
+                List.of("13:00", "14:30", "16:00")), NOITE("Noite",
+                        List.of("18:00", "19:30", "21:00"));
 
         private final String descricao;
         private final List<String> horarios;
@@ -105,26 +122,23 @@ public class Sessao {
         }
 
         /**
-         * Retorna os horários disponíveis para uma data específica
-         * baseado na data e hora atual
+         * Retorna os horários disponíveis para uma data específica baseado na data e hora atual
          */
         public List<String> getHorariosDisponiveis(LocalDate data, LocalTime horaAtual) {
             LocalDate hoje = LocalDate.now();
-            
+
             // Se a data for passada, não há horários disponíveis
             if (data.isBefore(hoje)) {
                 return new ArrayList<>();
             }
-            
+
             // Se for hoje, filtra horários futuros
             if (data.equals(hoje)) {
-                return this.horarios.stream()
-                        .map(LocalTime::parse)
-                        .filter(horario -> horario.isAfter(horaAtual))
-                        .map(LocalTime::toString)
+                return this.horarios.stream().map(LocalTime::parse)
+                        .filter(horario -> horario.isAfter(horaAtual)).map(LocalTime::toString)
                         .toList();
             }
-            
+
             // Se for data futura, todos os horários estão disponíveis
             return new ArrayList<>(this.horarios);
         }
@@ -138,14 +152,27 @@ public class Sessao {
         this.dataSessao = dataSessao;
         this.horario = horario;
         this.evento = evento;
-        this.ativo = true;
+        this.ativa = true;
+    }
+
+    /**
+     * Construtor para criação de sessão com nome
+     */
+    public Sessao(String nome, TipoSessao tipoSessao, LocalDate dataSessao, LocalTime horario,
+            Evento evento) {
+        this.nome = nome;
+        this.tipoSessao = tipoSessao;
+        this.dataSessao = dataSessao;
+        this.horario = horario;
+        this.evento = evento;
+        this.ativa = true;
     }
 
     /**
      * Verifica se a sessão está ativa
      */
     public boolean isAtiva() {
-        return this.ativo != null && this.ativo;
+        return this.ativa != null && this.ativa;
     }
 
     /**
@@ -162,6 +189,27 @@ public class Sessao {
      */
     public boolean isDisponivelParaCompra() {
         return isAtiva() && !isPassada();
+    }
+
+    /**
+     * Verifica se a sessão é hoje
+     */
+    public boolean isHoje() {
+        return this.dataSessao.equals(LocalDate.now());
+    }
+
+    /**
+     * Verifica se a sessão é amanhã
+     */
+    public boolean isAmanha() {
+        return this.dataSessao.equals(LocalDate.now().plusDays(1));
+    }
+
+    /**
+     * Verifica se a sessão é no futuro (mais de 1 dia)
+     */
+    public boolean isFutura() {
+        return this.dataSessao.isAfter(LocalDate.now().plusDays(1));
     }
 
     /**
@@ -190,11 +238,65 @@ public class Sessao {
      */
     public String getNomeCompleto() {
         if (this.evento != null) {
-            return String.format("%s - %s - %s", 
-                this.evento.getNome(), 
-                this.dataSessao.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                this.horario.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+            return String.format("%s - %s - %s", this.evento.getNome(),
+                    this.dataSessao
+                            .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    this.horario.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         }
         return this.nome;
     }
-} 
+
+    /**
+     * Retorna apenas as áreas ativas da sessão
+     */
+    public List<Area> getAreasAtivas() {
+        return this.areas.stream().filter(Area::isAtivo).toList();
+    }
+
+    /**
+     * Retorna apenas os ingressos ativos (não cancelados)
+     */
+    public List<Ingresso> getIngressosAtivos() {
+        return this.ingressos.stream().filter(i -> i.getStatus() != Ingresso.Status.CANCELADO)
+                .toList();
+    }
+
+    /**
+     * Retorna apenas as reservas ativas
+     */
+    public List<Reserva> getReservasAtivas() {
+        return this.reservas.stream().filter(Reserva::isAtiva).toList();
+    }
+
+    /**
+     * Calcula a média das avaliações da sessão
+     */
+    public double getMediaAvaliacoes() {
+        if (this.avaliacoes.isEmpty()) {
+            return 0.0;
+        }
+
+        return this.avaliacoes.stream().mapToInt(Avaliacao::getNota).average().orElse(0.0);
+    }
+
+    /**
+     * Retorna a quantidade de avaliações da sessão
+     */
+    public int getQuantidadeAvaliacoes() {
+        return this.avaliacoes.size();
+    }
+
+    /**
+     * Ativa a sessão
+     */
+    public void ativar() {
+        this.ativa = true;
+    }
+
+    /**
+     * Desativa a sessão
+     */
+    public void desativar() {
+        this.ativa = false;
+    }
+}

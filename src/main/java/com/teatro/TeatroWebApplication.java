@@ -2,7 +2,7 @@ package com.teatro;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+// import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /**
  * Classe principal da aplicação Spring Boot para o Sistema de Teatro
@@ -19,7 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * @version 1.0.0
  */
 @SpringBootApplication
-@EnableJpaAuditing
+// @EnableJpaAuditing
 public class TeatroWebApplication {
 
     public static void main(String[] args) {

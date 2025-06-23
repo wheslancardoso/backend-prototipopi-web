@@ -1,22 +1,28 @@
 package com.teatro.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teatro.dto.LoginRequest;
+import com.teatro.dto.LoginResponse;
+import com.teatro.dto.UsuarioDTO;
 import com.teatro.exception.AutenticacaoException;
 import com.teatro.exception.UsuarioJaExisteException;
 import com.teatro.exception.UsuarioNaoEncontradoException;
 import com.teatro.model.Usuario;
+import com.teatro.model.Usuario.TipoUsuario;
 import com.teatro.repository.UsuarioRepository;
 
 /**
  * Service para operações de negócio relacionadas a usuários
  * 
  * Responsabilidades: - Autenticação de usuários - Cadastro e validação de dados - Gerenciamento de
- * perfis (ADMIN/COMUM) - Validações de negócio
+ * perfis (ADMIN/COMUM) - Sistema de fidelidade - Validações de negócio
  */
 @Service
 @Transactional
@@ -27,6 +33,26 @@ public class UsuarioService {
 
   @Autowired
   private PasswordEncoder passwordEncoder;
+
+  /**
+   * Autentica um usuário e retorna resposta com token
+   * 
+   * @param loginRequest Dados de login
+   * @return LoginResponse com token e informações do usuário
+   * @throws AutenticacaoException se credenciais inválidas
+   */
+  public LoginResponse autenticarUsuario(LoginRequest loginRequest) {
+    Usuario usuario = autenticarUsuario(loginRequest.getIdentificador(), loginRequest.getSenha());
+
+    // TODO: Implementar geração de JWT token
+    String token = "jwt-token-placeholder";
+    String refreshToken = "refresh-token-placeholder";
+    LocalDateTime dataExpiracao = LocalDateTime.now().plusHours(24);
+
+    return new LoginResponse(token, refreshToken, usuario.getId(), usuario.getNome(),
+        usuario.getEmail(), usuario.getTipoUsuario(), usuario.getTotalPontosFidelidade(),
+        calcularNivelFidelidade(usuario.getTotalPontosFidelidade()), dataExpiracao);
+  }
 
   /**
    * Autentica um usuário por CPF ou email
@@ -62,11 +88,13 @@ public class UsuarioService {
   /**
    * Cadastra um novo usuário
    * 
-   * @param usuario Dados do usuário
-   * @return Usuário cadastrado
+   * @param usuarioDTO Dados do usuário
+   * @return UsuarioDTO do usuário cadastrado
    * @throws UsuarioJaExisteException se CPF ou email já existem
    */
-  public Usuario cadastrarUsuario(Usuario usuario) {
+  public UsuarioDTO cadastrarUsuario(UsuarioDTO usuarioDTO) {
+    Usuario usuario = usuarioDTO.toEntity();
+
     // Validações de negócio
     validarDadosUsuario(usuario);
 
@@ -82,7 +110,7 @@ public class UsuarioService {
 
     // Define tipo de usuário padrão como COMUM
     if (usuario.getTipoUsuario() == null) {
-      usuario.setTipoUsuario(Usuario.TipoUsuario.COMUM);
+      usuario.setTipoUsuario(TipoUsuario.COMUM);
     }
 
     // Define usuário como ativo
@@ -91,55 +119,62 @@ public class UsuarioService {
     // Criptografa a senha
     usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
 
-    return usuarioRepository.save(usuario);
+    Usuario usuarioSalvo = usuarioRepository.save(usuario);
+    return new UsuarioDTO(usuarioSalvo);
   }
 
   /**
    * Busca usuário por ID
    * 
    * @param id ID do usuário
-   * @return Usuário encontrado
+   * @return UsuarioDTO do usuário encontrado
    * @throws UsuarioNaoEncontradoException se usuário não existe
    */
   @Transactional(readOnly = true)
-  public Usuario buscarPorId(Long id) {
-    return usuarioRepository.findById(id).orElseThrow(
+  public UsuarioDTO buscarPorId(Long id) {
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(
         () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
+    return new UsuarioDTO(usuario);
   }
 
   /**
    * Busca usuário por CPF
    * 
    * @param cpf CPF do usuário
-   * @return Usuário encontrado
+   * @return UsuarioDTO do usuário encontrado
    * @throws UsuarioNaoEncontradoException se usuário não existe
    */
   @Transactional(readOnly = true)
-  public Usuario buscarPorCpf(String cpf) {
-    return usuarioRepository.findByCpf(cpf).orElseThrow(
+  public UsuarioDTO buscarPorCpf(String cpf) {
+    Usuario usuario = usuarioRepository.findByCpf(cpf).orElseThrow(
         () -> new UsuarioNaoEncontradoException("Usuário não encontrado com CPF: " + cpf));
+    return new UsuarioDTO(usuario);
   }
 
   /**
    * Lista todos os usuários ativos
    * 
-   * @return Lista de usuários ativos
+   * @return Lista de UsuarioDTO dos usuários ativos
    */
   @Transactional(readOnly = true)
-  public List<Usuario> listarUsuariosAtivos() {
-    return usuarioRepository.findByAtivoTrue();
+  public List<UsuarioDTO> listarUsuariosAtivos() {
+    return usuarioRepository.findByAtivoTrue().stream().map(UsuarioDTO::new)
+        .collect(Collectors.toList());
   }
 
   /**
    * Atualiza dados de um usuário
    * 
    * @param id ID do usuário
-   * @param usuario Dados atualizados
-   * @return Usuário atualizado
+   * @param usuarioDTO Dados atualizados
+   * @return UsuarioDTO do usuário atualizado
    * @throws UsuarioNaoEncontradoException se usuário não existe
    */
-  public Usuario atualizarUsuario(Long id, Usuario usuario) {
-    Usuario usuarioExistente = buscarPorId(id);
+  public UsuarioDTO atualizarUsuario(Long id, UsuarioDTO usuarioDTO) {
+    Usuario usuarioExistente = usuarioRepository.findById(id).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
+
+    Usuario usuario = usuarioDTO.toEntity();
 
     // Validações de negócio
     validarDadosUsuario(usuario);
@@ -169,7 +204,8 @@ public class UsuarioService {
       usuarioExistente.setSenha(passwordEncoder.encode(usuario.getSenha()));
     }
 
-    return usuarioRepository.save(usuarioExistente);
+    Usuario usuarioAtualizado = usuarioRepository.save(usuarioExistente);
+    return new UsuarioDTO(usuarioAtualizado);
   }
 
   /**
@@ -177,13 +213,15 @@ public class UsuarioService {
    * 
    * @param id ID do usuário
    * @param ativo Status desejado
-   * @return Usuário atualizado
+   * @return UsuarioDTO do usuário atualizado
    * @throws UsuarioNaoEncontradoException se usuário não existe
    */
-  public Usuario alterarStatusUsuario(Long id, boolean ativo) {
-    Usuario usuario = buscarPorId(id);
+  public UsuarioDTO alterarStatusUsuario(Long id, boolean ativo) {
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
     usuario.setAtivo(ativo);
-    return usuarioRepository.save(usuario);
+    Usuario usuarioAtualizado = usuarioRepository.save(usuario);
+    return new UsuarioDTO(usuarioAtualizado);
   }
 
   /**
@@ -196,20 +234,37 @@ public class UsuarioService {
    * @throws AutenticacaoException se senha atual está incorreta
    */
   public boolean alterarSenha(Long id, String senhaAtual, String novaSenha) {
-    Usuario usuario = buscarPorId(id);
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
 
     // Verifica se a senha atual está correta
     if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {
       throw new AutenticacaoException("Senha atual incorreta");
     }
 
-    // Valida a nova senha
-    if (novaSenha == null || novaSenha.trim().isEmpty()) {
-      throw new IllegalArgumentException("Nova senha não pode ser vazia");
-    }
+    // Criptografa e salva a nova senha
+    usuario.setSenha(passwordEncoder.encode(novaSenha));
+    usuarioRepository.save(usuario);
 
-    if (novaSenha.length() < 6) {
-      throw new IllegalArgumentException("Nova senha deve ter pelo menos 6 caracteres");
+    return true;
+  }
+
+  /**
+   * Recupera senha de um usuário
+   * 
+   * @param cpf CPF do usuário
+   * @param email Email do usuário
+   * @param novaSenha Nova senha
+   * @return true se recuperação foi bem-sucedida
+   * @throws UsuarioNaoEncontradoException se usuário não existe
+   */
+  public boolean recuperarSenha(String cpf, String email, String novaSenha) {
+    Usuario usuario = usuarioRepository.findByCpf(cpf).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com CPF: " + cpf));
+
+    // Verifica se o email corresponde ao CPF
+    if (!usuario.getEmail().equals(email)) {
+      throw new UsuarioNaoEncontradoException("Email não corresponde ao CPF informado");
     }
 
     // Criptografa e salva a nova senha
@@ -220,50 +275,44 @@ public class UsuarioService {
   }
 
   /**
-   * Recupera senha por CPF e email
+   * Adiciona pontos de fidelidade a um usuário
    * 
-   * @param cpf CPF do usuário
-   * @param email Email do usuário
-   * @param novaSenha Nova senha
-   * @return true se recuperação foi bem-sucedida
-   * @throws UsuarioNaoEncontradoException se CPF e email não correspondem
+   * @param usuarioId ID do usuário
+   * @param pontos Pontos a serem adicionados
+   * @return UsuarioDTO do usuário atualizado
    */
-  public boolean recuperarSenha(String cpf, String email, String novaSenha) {
-    // Busca usuário por CPF
-    Optional<Usuario> usuarioOpt = usuarioRepository.findByCpf(cpf);
+  public UsuarioDTO adicionarPontosFidelidade(Long usuarioId, int pontos) {
+    Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + usuarioId));
 
-    if (usuarioOpt.isEmpty()) {
-      throw new UsuarioNaoEncontradoException("CPF não encontrado: " + cpf);
-    }
+    // TODO: Implementar lógica de pontos de fidelidade
+    // Por enquanto, apenas retorna o usuário
+    return new UsuarioDTO(usuario);
+  }
 
-    Usuario usuario = usuarioOpt.get();
-
-    // Verifica se o email corresponde
-    if (!usuario.getEmail().equals(email)) {
-      throw new UsuarioNaoEncontradoException("CPF e email não correspondem");
-    }
-
-    // Valida a nova senha
-    if (novaSenha == null || novaSenha.trim().isEmpty()) {
-      throw new IllegalArgumentException("Nova senha não pode ser vazia");
-    }
-
-    if (novaSenha.length() < 6) {
-      throw new IllegalArgumentException("Nova senha deve ter pelo menos 6 caracteres");
-    }
-
-    // Criptografa e salva a nova senha
-    usuario.setSenha(passwordEncoder.encode(novaSenha));
-    usuarioRepository.save(usuario);
-
-    return true;
+  /**
+   * Calcula o nível de fidelidade baseado nos pontos
+   * 
+   * @param pontos Total de pontos do usuário
+   * @return Nível de fidelidade
+   */
+  private String calcularNivelFidelidade(int pontos) {
+    if (pontos >= 1000)
+      return "DIAMANTE";
+    if (pontos >= 500)
+      return "OURO";
+    if (pontos >= 200)
+      return "PRATA";
+    if (pontos >= 50)
+      return "BRONZE";
+    return "INICIANTE";
   }
 
   /**
    * Valida dados de um usuário
    * 
    * @param usuario Usuário a ser validado
-   * @throws IllegalArgumentException se dados são inválidos
+   * @throws IllegalArgumentException se dados inválidos
    */
   private void validarDadosUsuario(Usuario usuario) {
     if (usuario.getNome() == null || usuario.getNome().trim().isEmpty()) {
@@ -282,19 +331,14 @@ public class UsuarioService {
       throw new IllegalArgumentException("Senha é obrigatória");
     }
 
-    if (usuario.getSenha().length() < 6) {
-      throw new IllegalArgumentException("Senha deve ter pelo menos 6 caracteres");
+    // Validação básica de CPF (formato)
+    if (!usuario.getCpf().matches("\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}")) {
+      throw new IllegalArgumentException("CPF deve estar no formato 000.000.000-00");
     }
 
     // Validação básica de email
-    if (!usuario.getEmail().contains("@")) {
-      throw new IllegalArgumentException("Email inválido");
-    }
-
-    // Validação básica de CPF (formato)
-    String cpf = usuario.getCpf().replaceAll("[^0-9]", "");
-    if (cpf.length() != 11) {
-      throw new IllegalArgumentException("CPF deve ter 11 dígitos");
+    if (!usuario.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+      throw new IllegalArgumentException("Email deve ter formato válido");
     }
   }
 
@@ -302,10 +346,10 @@ public class UsuarioService {
    * Verifica se um usuário é administrador
    * 
    * @param usuario Usuário a ser verificado
-   * @return true se é administrador
+   * @return true se for administrador
    */
   public boolean isAdministrador(Usuario usuario) {
-    return Usuario.TipoUsuario.ADMIN.equals(usuario.getTipoUsuario());
+    return usuario != null && TipoUsuario.ADMIN.equals(usuario.getTipoUsuario());
   }
 
   /**
@@ -316,5 +360,21 @@ public class UsuarioService {
   @Transactional(readOnly = true)
   public long contarUsuariosAtivos() {
     return usuarioRepository.countByAtivoTrue();
+  }
+
+  /**
+   * Remove um usuário do sistema
+   * 
+   * @param id ID do usuário
+   * @throws UsuarioNaoEncontradoException se usuário não existe
+   */
+  public void removerUsuario(Long id) {
+    Usuario usuario = usuarioRepository.findById(id).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
+
+    // Verifica se o usuário tem ingressos ou outras dependências
+    // TODO: Implementar verificação de dependências antes da remoção
+
+    usuarioRepository.delete(usuario);
   }
 }

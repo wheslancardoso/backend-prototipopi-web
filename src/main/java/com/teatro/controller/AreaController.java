@@ -1,7 +1,6 @@
 package com.teatro.controller;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,16 +16,20 @@ import org.springframework.web.bind.annotation.RestController;
 import com.teatro.dto.AreaDTO;
 import com.teatro.exception.AreaJaExisteException;
 import com.teatro.exception.AreaNaoEncontradaException;
-import com.teatro.model.Area;
 import com.teatro.service.AreaService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 /**
  * Controller para operações relacionadas a áreas do teatro
+ *
+ * Endpoints: - POST /api/areas - Cadastrar área - GET /api/areas - Listar áreas - GET
+ * /api/areas/{id} - Buscar área por ID - PUT /api/areas/{id} - Atualizar área - DELETE
+ * /api/areas/{id} - Remover área - GET /api/areas/sessao/{sessaoId} - Listar áreas por sessão - GET
+ * /api/areas/disponiveis/{sessaoId} - Listar áreas disponíveis para compra em uma sessão
  */
 @RestController
-@RequestMapping("/areas")
+@RequestMapping("/api/areas")
 @CrossOrigin(origins = "*")
 @Tag(name = "Áreas", description = "Endpoints para gerenciamento de áreas do teatro")
 public class AreaController {
@@ -37,9 +40,8 @@ public class AreaController {
   @PostMapping
   public ResponseEntity<AreaDTO> cadastrar(@Valid @RequestBody AreaDTO areaDTO) {
     try {
-      Area area = converterParaModel(areaDTO);
-      Area areaSalva = areaService.cadastrarArea(area);
-      return ResponseEntity.status(HttpStatus.CREATED).body(converterParaDTO(areaSalva));
+      AreaDTO areaSalva = areaService.cadastrarArea(areaDTO);
+      return ResponseEntity.status(HttpStatus.CREATED).body(areaSalva);
     } catch (AreaJaExisteException e) {
       return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
@@ -47,17 +49,15 @@ public class AreaController {
 
   @GetMapping
   public ResponseEntity<List<AreaDTO>> listarAreas() {
-    List<Area> areas = areaService.listarTodasAreas();
-    List<AreaDTO> areasDTO =
-        areas.stream().map(this::converterParaDTO).collect(Collectors.toList());
-    return ResponseEntity.ok(areasDTO);
+    List<AreaDTO> areas = areaService.listarTodasAreas();
+    return ResponseEntity.ok(areas);
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<AreaDTO> buscarPorId(@PathVariable Long id) {
     try {
-      Area area = areaService.buscarPorId(id);
-      return ResponseEntity.ok(converterParaDTO(area));
+      AreaDTO area = areaService.buscarPorId(id);
+      return ResponseEntity.ok(area);
     } catch (AreaNaoEncontradaException e) {
       return ResponseEntity.notFound().build();
     }
@@ -67,9 +67,8 @@ public class AreaController {
   public ResponseEntity<AreaDTO> atualizar(@PathVariable Long id,
       @Valid @RequestBody AreaDTO areaDTO) {
     try {
-      Area area = converterParaModel(areaDTO);
-      Area areaAtualizada = areaService.atualizarArea(id, area);
-      return ResponseEntity.ok(converterParaDTO(areaAtualizada));
+      AreaDTO areaAtualizada = areaService.atualizarArea(id, areaDTO);
+      return ResponseEntity.ok(areaAtualizada);
     } catch (AreaNaoEncontradaException e) {
       return ResponseEntity.notFound().build();
     } catch (AreaJaExisteException e) {
@@ -87,22 +86,16 @@ public class AreaController {
     }
   }
 
-  private AreaDTO converterParaDTO(Area area) {
-    return new AreaDTO(area.getId(), area.getNome(),
-        area.getPreco() != null ? area.getPreco().doubleValue() : null, area.getCapacidadeTotal(),
-        null, // sessaoId não é campo direto
-        null // faturamento não é campo direto
-    );
+  @GetMapping("/sessao/{sessaoId}")
+  public ResponseEntity<List<AreaDTO>> listarAreasPorSessao(@PathVariable Long sessaoId) {
+    List<AreaDTO> areas = areaService.listarAreasPorSessao(sessaoId);
+    return ResponseEntity.ok(areas);
   }
 
-  private Area converterParaModel(AreaDTO dto) {
-    Area area = new Area();
-    area.setId(dto.getId());
-    area.setNome(dto.getNome());
-    if (dto.getPreco() != null)
-      area.setPreco(java.math.BigDecimal.valueOf(dto.getPreco()));
-    area.setCapacidadeTotal(dto.getCapacidadeTotal());
-    area.setDescricao(null); // Ajuste se necessário
-    return area;
+  @GetMapping("/disponiveis/{sessaoId}")
+  public ResponseEntity<List<AreaDTO>> listarAreasDisponiveisParaCompra(
+      @PathVariable Long sessaoId) {
+    List<AreaDTO> areas = areaService.listarAreasDisponiveisParaCompra(sessaoId);
+    return ResponseEntity.ok(areas);
   }
 }

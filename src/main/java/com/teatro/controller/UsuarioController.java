@@ -1,7 +1,7 @@
 package com.teatro.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.teatro.dto.LoginRequest;
 import com.teatro.dto.LoginResponse;
@@ -37,10 +38,11 @@ import jakarta.validation.Valid;
  * usuário - GET /api/usuarios - Listar usuários (admin) - GET /api/usuarios/{id} - Buscar usuário
  * por ID - PUT /api/usuarios/{id} - Atualizar usuário - DELETE /api/usuarios/{id} - Remover usuário
  * (admin) - POST /api/usuarios/{id}/alterar-senha - Alterar senha - POST
- * /api/usuarios/recuperar-senha - Recuperar senha
+ * /api/usuarios/recuperar-senha - Recuperar senha - GET /api/usuarios/{id}/pontos - Consultar
+ * pontos de fidelidade - POST /api/usuarios/{id}/adicionar-pontos - Adicionar pontos (admin)
  */
 @RestController
-@RequestMapping("/usuarios")
+@RequestMapping("/api/usuarios")
 @CrossOrigin(origins = "*") // Configurar CORS adequadamente em produção
 @Tag(name = "Usuários", description = "Endpoints para gerenciamento de usuários e autenticação")
 public class UsuarioController {
@@ -69,9 +71,15 @@ public class UsuarioController {
 
       // TODO: Gerar token JWT
       String token = "jwt-token-placeholder"; // Implementar JWT
+      String refreshToken = "refresh-token-placeholder"; // Implementar JWT
 
       LoginResponse response =
-          new LoginResponse(token, converterParaDTO(usuario), usuario.getTipoUsuario().name());
+          new LoginResponse(token, refreshToken, usuario.getId(), usuario.getNome(),
+              usuario.getEmail(), usuario.getTipoUsuario(), usuario.getTotalPontosFidelidade(),
+              calcularNivelFidelidade(usuario.getTotalPontosFidelidade()), null); // dataExpiracao
+                                                                                  // será
+                                                                                  // implementada
+                                                                                  // com JWT
 
       return ResponseEntity.ok(response);
     } catch (AutenticacaoException e) {
@@ -94,9 +102,8 @@ public class UsuarioController {
       @ApiResponse(responseCode = "400", description = "Dados de entrada inválidos")})
   public ResponseEntity<UsuarioDTO> cadastrar(@Valid @RequestBody UsuarioDTO usuarioDTO) {
     try {
-      Usuario usuario = converterParaModel(usuarioDTO);
-      Usuario usuarioSalvo = usuarioService.cadastrarUsuario(usuario);
-      return ResponseEntity.status(HttpStatus.CREATED).body(converterParaDTO(usuarioSalvo));
+      UsuarioDTO usuarioSalvo = usuarioService.cadastrarUsuario(usuarioDTO);
+      return ResponseEntity.status(HttpStatus.CREATED).body(usuarioSalvo);
     } catch (UsuarioJaExisteException e) {
       return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
@@ -114,10 +121,8 @@ public class UsuarioController {
       @ApiResponse(responseCode = "200", description = "Lista de usuários retornada com sucesso",
           content = @Content(schema = @Schema(implementation = UsuarioDTO.class)))})
   public ResponseEntity<List<UsuarioDTO>> listarUsuarios() {
-    List<Usuario> usuarios = usuarioService.listarUsuariosAtivos();
-    List<UsuarioDTO> usuariosDTO =
-        usuarios.stream().map(this::converterParaDTO).collect(Collectors.toList());
-    return ResponseEntity.ok(usuariosDTO);
+    List<UsuarioDTO> usuarios = usuarioService.listarUsuariosAtivos();
+    return ResponseEntity.ok(usuarios);
   }
 
   /**
@@ -135,8 +140,8 @@ public class UsuarioController {
       @ApiResponse(responseCode = "404", description = "Usuário não encontrado")})
   public ResponseEntity<UsuarioDTO> buscarPorId(@PathVariable Long id) {
     try {
-      Usuario usuario = usuarioService.buscarPorId(id);
-      return ResponseEntity.ok(converterParaDTO(usuario));
+      UsuarioDTO usuario = usuarioService.buscarPorId(id);
+      return ResponseEntity.ok(usuario);
     } catch (UsuarioNaoEncontradoException e) {
       return ResponseEntity.notFound().build();
     }
@@ -160,9 +165,8 @@ public class UsuarioController {
   public ResponseEntity<UsuarioDTO> atualizar(@PathVariable Long id,
       @Valid @RequestBody UsuarioDTO usuarioDTO) {
     try {
-      Usuario usuario = converterParaModel(usuarioDTO);
-      Usuario usuarioAtualizado = usuarioService.atualizarUsuario(id, usuario);
-      return ResponseEntity.ok(converterParaDTO(usuarioAtualizado));
+      UsuarioDTO usuarioAtualizado = usuarioService.atualizarUsuario(id, usuarioDTO);
+      return ResponseEntity.ok(usuarioAtualizado);
     } catch (UsuarioNaoEncontradoException e) {
       return ResponseEntity.notFound().build();
     } catch (UsuarioJaExisteException e) {
@@ -220,7 +224,7 @@ public class UsuarioController {
   /**
    * Recupera senha de um usuário
    * 
-   * @param request Dados da recuperação de senha
+   * @param request Dados para recuperação
    * @return Status da operação
    */
   @PostMapping("/recuperar-senha")
@@ -239,34 +243,89 @@ public class UsuarioController {
   }
 
   /**
-   * Converte Usuario para UsuarioDTO
+   * Consulta pontos de fidelidade de um usuário
+   * 
+   * @param id ID do usuário
+   * @return Pontos de fidelidade
    */
-  private UsuarioDTO converterParaDTO(Usuario usuario) {
-    return new UsuarioDTO(usuario.getId(), usuario.getNome(), usuario.getCpf(),
-        usuario.getEndereco(), usuario.getTelefone(), usuario.getEmail(),
-        usuario.getTipoUsuario().name(), null // Não incluir senha no DTO
-    );
+  @GetMapping("/{id}/pontos")
+  @Operation(summary = "Consultar pontos de fidelidade",
+      description = "Retorna os pontos de fidelidade de um usuário")
+  @ApiResponses(
+      value = {@ApiResponse(responseCode = "200", description = "Pontos consultados com sucesso"),
+          @ApiResponse(responseCode = "404", description = "Usuário não encontrado")})
+  public ResponseEntity<PontosFidelidadeResponse> consultarPontos(@PathVariable Long id) {
+    try {
+      // TODO: Implementar método no service
+      BigDecimal pontos = BigDecimal.ZERO; // Placeholder
+      return ResponseEntity.ok(new PontosFidelidadeResponse(id, pontos));
+    } catch (UsuarioNaoEncontradoException e) {
+      return ResponseEntity.notFound().build();
+    }
   }
 
   /**
-   * Converte UsuarioDTO para Usuario
+   * Adiciona pontos de fidelidade a um usuário (apenas admin)
+   * 
+   * @param id ID do usuário
+   * @param request Dados dos pontos
+   * @return Status da operação
    */
-  private Usuario converterParaModel(UsuarioDTO usuarioDTO) {
-    Usuario usuario = new Usuario();
-    usuario.setId(usuarioDTO.getId());
-    usuario.setNome(usuarioDTO.getNome());
-    usuario.setCpf(usuarioDTO.getCpf());
-    usuario.setEndereco(usuarioDTO.getEndereco());
-    usuario.setTelefone(usuarioDTO.getTelefone());
-    usuario.setEmail(usuarioDTO.getEmail());
-    usuario.setSenha(usuarioDTO.getSenha());
-
-    // Converte String para enum TipoUsuario
-    if (usuarioDTO.getTipoUsuario() != null) {
-      usuario.setTipoUsuario(Usuario.TipoUsuario.valueOf(usuarioDTO.getTipoUsuario()));
+  @PostMapping("/{id}/adicionar-pontos")
+  @Operation(summary = "Adicionar pontos de fidelidade",
+      description = "Adiciona pontos de fidelidade a um usuário (apenas admin)")
+  @ApiResponses(
+      value = {@ApiResponse(responseCode = "200", description = "Pontos adicionados com sucesso"),
+          @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+          @ApiResponse(responseCode = "400", description = "Quantidade de pontos inválida")})
+  public ResponseEntity<Void> adicionarPontos(@PathVariable Long id,
+      @RequestBody AdicionarPontosRequest request) {
+    try {
+      // TODO: Implementar método no service
+      return ResponseEntity.ok().build();
+    } catch (UsuarioNaoEncontradoException e) {
+      return ResponseEntity.notFound().build();
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest().build();
     }
+  }
 
-    return usuario;
+  /**
+   * Busca usuários por filtros (apenas admin)
+   * 
+   * @param tipoUsuario Tipo de usuário (ADMIN/COMUM)
+   * @param ativo Status ativo
+   * @return Lista de usuários filtrados
+   */
+  @GetMapping("/buscar")
+  @Operation(summary = "Buscar usuários por filtros",
+      description = "Busca usuários usando filtros específicos (apenas admin)")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "Usuários encontrados com sucesso")})
+  public ResponseEntity<List<UsuarioDTO>> buscarUsuarios(
+      @RequestParam(required = false) String tipoUsuario,
+      @RequestParam(required = false) Boolean ativo) {
+    // TODO: Implementar método no service
+    List<UsuarioDTO> usuarios = usuarioService.listarUsuariosAtivos(); // Placeholder
+    return ResponseEntity.ok(usuarios);
+  }
+
+  // Métodos de conversão
+  private UsuarioDTO converterParaDTO(Usuario usuario) {
+    return new UsuarioDTO(usuario);
+  }
+
+  // Método auxiliar para calcular nível de fidelidade
+  private String calcularNivelFidelidade(int pontos) {
+    if (pontos >= 1000)
+      return "DIAMANTE";
+    if (pontos >= 500)
+      return "OURO";
+    if (pontos >= 200)
+      return "PRATA";
+    if (pontos >= 50)
+      return "BRONZE";
+    return "INICIANTE";
   }
 
   /**
@@ -325,6 +384,47 @@ public class UsuarioController {
 
     public void setNovaSenha(String novaSenha) {
       this.novaSenha = novaSenha;
+    }
+  }
+
+  public static class PontosFidelidadeResponse {
+    private Long usuarioId;
+    private BigDecimal pontos;
+
+    public PontosFidelidadeResponse(Long usuarioId, BigDecimal pontos) {
+      this.usuarioId = usuarioId;
+      this.pontos = pontos;
+    }
+
+    // Getters
+    public Long getUsuarioId() {
+      return usuarioId;
+    }
+
+    public BigDecimal getPontos() {
+      return pontos;
+    }
+  }
+
+  public static class AdicionarPontosRequest {
+    private BigDecimal quantidade;
+    private String motivo;
+
+    // Getters e Setters
+    public BigDecimal getQuantidade() {
+      return quantidade;
+    }
+
+    public void setQuantidade(BigDecimal quantidade) {
+      this.quantidade = quantidade;
+    }
+
+    public String getMotivo() {
+      return motivo;
+    }
+
+    public void setMotivo(String motivo) {
+      this.motivo = motivo;
     }
   }
 }

@@ -45,7 +45,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
         * Busca eventos que possuem sessões futuras
         */
        @Query("SELECT DISTINCT e FROM Evento e " + "JOIN e.sessoes s " + "WHERE e.ativo = true "
-                     + "AND s.ativo = true " + "AND s.dataSessao >= CURRENT_DATE "
+                     + "AND s.ativa = true " + "AND s.dataSessao >= CURRENT_DATE "
                      + "ORDER BY e.nome")
        List<Evento> findEventosComSessoesFuturas();
 
@@ -53,7 +53,7 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
         * Busca eventos por período de data
         */
        @Query("SELECT DISTINCT e FROM Evento e " + "JOIN e.sessoes s " + "WHERE e.ativo = true "
-                     + "AND s.ativo = true " + "AND s.dataSessao BETWEEN :dataInicio AND :dataFim "
+                     + "AND s.ativa = true " + "AND s.dataSessao BETWEEN :dataInicio AND :dataFim "
                      + "ORDER BY e.nome")
        List<Evento> findEventosPorPeriodo(@Param("dataInicio") String dataInicio,
                      @Param("dataFim") String dataFim);

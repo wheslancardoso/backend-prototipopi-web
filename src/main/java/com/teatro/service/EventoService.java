@@ -1,9 +1,11 @@
 package com.teatro.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.teatro.dto.EventoDTO;
 import com.teatro.exception.EventoJaExisteException;
 import com.teatro.exception.EventoNaoEncontradoException;
 import com.teatro.model.Evento;
@@ -13,7 +15,7 @@ import com.teatro.repository.EventoRepository;
  * Service para operações de negócio relacionadas a eventos
  * 
  * Responsabilidades: - Gerenciamento de eventos teatrais - Validações de dados - Controle de
- * eventos ativos/inativos
+ * eventos ativos/inativos - Estatísticas de eventos
  */
 @Service
 @Transactional
@@ -25,11 +27,13 @@ public class EventoService {
   /**
    * Cadastra um novo evento
    * 
-   * @param evento Dados do evento
-   * @return Evento cadastrado
+   * @param eventoDTO Dados do evento
+   * @return EventoDTO do evento cadastrado
    * @throws EventoJaExisteException se evento já existe com o mesmo nome
    */
-  public Evento cadastrarEvento(Evento evento) {
+  public EventoDTO cadastrarEvento(EventoDTO eventoDTO) {
+    Evento evento = eventoDTO.toEntity();
+
     // Validações de negócio
     validarDadosEvento(evento);
 
@@ -41,63 +45,70 @@ public class EventoService {
     // Define evento como ativo
     evento.setAtivo(true);
 
-    return eventoRepository.save(evento);
+    Evento eventoSalvo = eventoRepository.save(evento);
+    return new EventoDTO(eventoSalvo);
   }
 
   /**
    * Busca evento por ID
    * 
    * @param id ID do evento
-   * @return Evento encontrado
+   * @return EventoDTO do evento encontrado
    * @throws EventoNaoEncontradoException se evento não existe
    */
   @Transactional(readOnly = true)
-  public Evento buscarPorId(Long id) {
-    return eventoRepository.findById(id)
+  public EventoDTO buscarPorId(Long id) {
+    Evento evento = eventoRepository.findById(id)
         .orElseThrow(() -> new EventoNaoEncontradoException("Evento não encontrado com ID: " + id));
+    return new EventoDTO(evento);
   }
 
   /**
    * Lista todos os eventos ativos
    * 
-   * @return Lista de eventos ativos
+   * @return Lista de EventoDTO dos eventos ativos
    */
   @Transactional(readOnly = true)
-  public List<Evento> listarEventosAtivos() {
-    return eventoRepository.findByAtivoTrue();
+  public List<EventoDTO> listarEventosAtivos() {
+    return eventoRepository.findByAtivoTrue().stream().map(EventoDTO::new)
+        .collect(Collectors.toList());
   }
 
   /**
    * Lista todos os eventos
    * 
-   * @return Lista de todos os eventos
+   * @return Lista de EventoDTO de todos os eventos
    */
   @Transactional(readOnly = true)
-  public List<Evento> listarTodosEventos() {
-    return eventoRepository.findAll();
+  public List<EventoDTO> listarTodosEventos() {
+    return eventoRepository.findAll().stream().map(EventoDTO::new).collect(Collectors.toList());
   }
 
   /**
    * Busca eventos por nome (busca parcial)
    * 
    * @param nome Nome ou parte do nome do evento
-   * @return Lista de eventos encontrados
+   * @return Lista de EventoDTO dos eventos encontrados
    */
   @Transactional(readOnly = true)
-  public List<Evento> buscarPorNome(String nome) {
-    return eventoRepository.findByNomeContainingIgnoreCase(nome);
+  public List<EventoDTO> buscarPorNome(String nome) {
+    return eventoRepository.findByNomeContainingIgnoreCase(nome).stream().map(EventoDTO::new)
+        .collect(Collectors.toList());
   }
 
   /**
    * Atualiza dados de um evento
    * 
    * @param id ID do evento
-   * @param evento Dados atualizados
-   * @return Evento atualizado
+   * @param eventoDTO Dados atualizados
+   * @return EventoDTO do evento atualizado
    * @throws EventoNaoEncontradoException se evento não existe
    */
-  public Evento atualizarEvento(Long id, Evento evento) {
-    Evento eventoExistente = buscarPorId(id);
+  public EventoDTO atualizarEvento(Long id, EventoDTO eventoDTO) {
+    Evento eventoExistente = eventoRepository.findById(id)
+        .orElseThrow(() -> new EventoNaoEncontradoException("Evento não encontrado com ID: " + id));
+
+    Evento evento = eventoDTO.toEntity();
 
     // Validações de negócio
     validarDadosEvento(evento);
@@ -115,7 +126,8 @@ public class EventoService {
     eventoExistente.setClassificacaoIndicativa(evento.getClassificacaoIndicativa());
     eventoExistente.setUrlPoster(evento.getUrlPoster());
 
-    return eventoRepository.save(eventoExistente);
+    Evento eventoAtualizado = eventoRepository.save(eventoExistente);
+    return new EventoDTO(eventoAtualizado);
   }
 
   /**
@@ -123,13 +135,15 @@ public class EventoService {
    * 
    * @param id ID do evento
    * @param ativo Status desejado
-   * @return Evento atualizado
+   * @return EventoDTO do evento atualizado
    * @throws EventoNaoEncontradoException se evento não existe
    */
-  public Evento alterarStatusEvento(Long id, boolean ativo) {
-    Evento evento = buscarPorId(id);
+  public EventoDTO alterarStatusEvento(Long id, boolean ativo) {
+    Evento evento = eventoRepository.findById(id)
+        .orElseThrow(() -> new EventoNaoEncontradoException("Evento não encontrado com ID: " + id));
     evento.setAtivo(ativo);
-    return eventoRepository.save(evento);
+    Evento eventoAtualizado = eventoRepository.save(evento);
+    return new EventoDTO(eventoAtualizado);
   }
 
   /**
@@ -139,7 +153,8 @@ public class EventoService {
    * @throws EventoNaoEncontradoException se evento não existe
    */
   public void removerEvento(Long id) {
-    Evento evento = buscarPorId(id);
+    Evento evento = eventoRepository.findById(id)
+        .orElseThrow(() -> new EventoNaoEncontradoException("Evento não encontrado com ID: " + id));
 
     // Verifica se o evento tem sessões cadastradas
     if (!evento.getSessoes().isEmpty()) {
@@ -149,6 +164,67 @@ public class EventoService {
 
     evento.setAtivo(false);
     eventoRepository.save(evento);
+  }
+
+  /**
+   * Busca eventos com sessões futuras
+   * 
+   * @return Lista de EventoDTO dos eventos com sessões futuras
+   */
+  @Transactional(readOnly = true)
+  public List<EventoDTO> listarEventosComSessoesFuturas() {
+    return eventoRepository.findByAtivoTrue()
+            .stream()
+            .filter(evento -> !evento.getSessoes().isEmpty())
+            .map(EventoDTO::new)
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * Busca eventos sem sessões cadastradas
+   * 
+   * @return Lista de EventoDTO dos eventos sem sessões
+   */
+  @Transactional(readOnly = true)
+  public List<EventoDTO> listarEventosSemSessoes() {
+    return eventoRepository.findByAtivoTrue()
+            .stream()
+            .filter(evento -> evento.getSessoes().isEmpty())
+            .map(EventoDTO::new)
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * Busca eventos por classificação indicativa
+   * 
+   * @param classificacao Classificação indicativa
+   * @return Lista de EventoDTO dos eventos encontrados
+   */
+  @Transactional(readOnly = true)
+  public List<EventoDTO> buscarPorClassificacao(String classificacao) {
+    return eventoRepository.findByAtivoTrue()
+            .stream()
+            .filter(evento -> classificacao.equals(evento.getClassificacaoIndicativa()))
+            .map(EventoDTO::new)
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * Busca eventos por duração (em minutos)
+   * 
+   * @param duracaoMinima Duração mínima em minutos
+   * @param duracaoMaxima Duração máxima em minutos
+   * @return Lista de EventoDTO dos eventos encontrados
+   */
+  @Transactional(readOnly = true)
+  public List<EventoDTO> buscarPorDuracao(Integer duracaoMinima, Integer duracaoMaxima) {
+    return eventoRepository.findByAtivoTrue()
+            .stream()
+            .filter(evento -> evento.getDuracaoMinutos() != null && 
+                    evento.getDuracaoMinutos() >= duracaoMinima && 
+                    evento.getDuracaoMinutos() <= duracaoMaxima)
+            .map(EventoDTO::new)
+            .collect(Collectors.toList());
   }
 
   /**
@@ -168,6 +244,10 @@ public class EventoService {
 
     if (evento.getDuracaoMinutos() != null && evento.getDuracaoMinutos() <= 0) {
       throw new IllegalArgumentException("Duração do evento deve ser maior que zero");
+    }
+
+    if (evento.getDuracaoMinutos() != null && evento.getDuracaoMinutos() > 300) {
+      throw new IllegalArgumentException("Duração do evento não pode ser maior que 300 minutos");
     }
   }
 
@@ -193,22 +273,18 @@ public class EventoService {
   }
 
   /**
-   * Lista eventos com sessões futuras
+   * Busca evento por nome exato
    * 
-   * @return Lista de eventos com sessões futuras
+   * @param nome Nome exato do evento
+   * @return EventoDTO do evento encontrado ou null
    */
   @Transactional(readOnly = true)
-  public List<Evento> listarEventosComSessoesFuturas() {
-    return eventoRepository.findEventosComSessoesFuturas();
-  }
-
-  /**
-   * Lista eventos sem sessões
-   * 
-   * @return Lista de eventos sem sessões
-   */
-  @Transactional(readOnly = true)
-  public List<Evento> listarEventosSemSessoes() {
-    return eventoRepository.findEventosSemSessoes();
+  public EventoDTO buscarPorNomeExato(String nome) {
+    return eventoRepository.findByAtivoTrue()
+            .stream()
+            .filter(evento -> nome.equals(evento.getNome()))
+            .findFirst()
+            .map(EventoDTO::new)
+            .orElse(null);
   }
 }

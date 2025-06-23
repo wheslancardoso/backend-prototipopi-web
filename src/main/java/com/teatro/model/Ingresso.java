@@ -28,11 +28,11 @@ import lombok.NoArgsConstructor;
 /**
  * Entidade que representa um ingresso vendido
  * 
- * Implementa a lógica de ocupação de poltronas com chave única:
- * - evento_id + data + horário + area_id + poltrona_id
+ * Implementa a lógica de ocupação de poltronas com chave única: - evento_id + data + horário +
+ * area_id + poltrona_id
  * 
- * Uma vez que uma poltrona é reservada para uma combinação específica,
- * ela fica ocupada para todos os usuários até que qualquer parâmetro mude.
+ * Uma vez que uma poltrona é reservada para uma combinação específica, ela fica ocupada para todos
+ * os usuários até que qualquer parâmetro mude.
  */
 @Entity
 @Table(name = "ingressos")
@@ -76,7 +76,7 @@ public class Ingresso {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private StatusIngresso status = StatusIngresso.VALIDO;
+    private Status status = Status.RESERVADO;
 
     @CreatedDate
     @Column(name = "data_compra", nullable = false, updatable = false)
@@ -86,21 +86,15 @@ public class Ingresso {
     @Column(name = "data_atualizacao")
     private LocalDateTime dataAtualizacao;
 
-    @Column(name = "observacoes", length = 500)
-    private String observacoes;
-
     /**
      * Enum que define os status possíveis de um ingresso
      */
-    public enum StatusIngresso {
-        VALIDO("Válido"),
-        UTILIZADO("Utilizado"),
-        CANCELADO("Cancelado"),
-        REEMBOLSADO("Reembolsado");
+    public enum Status {
+        RESERVADO("Reservado"), PAGO("Pago"), CANCELADO("Cancelado"), UTILIZADO("Utilizado");
 
         private final String descricao;
 
-        StatusIngresso(String descricao) {
+        Status(String descricao) {
             this.descricao = descricao;
         }
 
@@ -112,14 +106,15 @@ public class Ingresso {
     /**
      * Construtor para criação de ingresso
      */
-    public Ingresso(Usuario usuario, Sessao sessao, Area area, Integer numeroPoltrona, BigDecimal valor) {
+    public Ingresso(Usuario usuario, Sessao sessao, Area area, Integer numeroPoltrona,
+            BigDecimal valor) {
         this.usuario = usuario;
         this.sessao = sessao;
         this.area = area;
         this.numeroPoltrona = numeroPoltrona;
         this.valor = valor;
         this.codigo = gerarCodigoUnico();
-        this.status = StatusIngresso.VALIDO;
+        this.status = Status.RESERVADO;
     }
 
     /**
@@ -133,22 +128,32 @@ public class Ingresso {
      * Verifica se o ingresso é válido
      */
     public boolean isValido() {
-        return StatusIngresso.VALIDO.equals(this.status);
+        return Status.RESERVADO.equals(this.status) || Status.PAGO.equals(this.status);
     }
 
     /**
      * Verifica se o ingresso pode ser utilizado
      */
     public boolean podeSerUtilizado() {
-        return isValido() && !this.sessao.isPassada();
+        return (Status.PAGO.equals(this.status) || Status.RESERVADO.equals(this.status))
+                && !this.sessao.isPassada();
+    }
+
+    /**
+     * Marca o ingresso como pago
+     */
+    public void marcarComoPago() {
+        if (Status.RESERVADO.equals(this.status)) {
+            this.status = Status.PAGO;
+        }
     }
 
     /**
      * Marca o ingresso como utilizado
      */
     public void marcarComoUtilizado() {
-        if (isValido()) {
-            this.status = StatusIngresso.UTILIZADO;
+        if (Status.PAGO.equals(this.status) || Status.RESERVADO.equals(this.status)) {
+            this.status = Status.UTILIZADO;
         }
     }
 
@@ -156,17 +161,8 @@ public class Ingresso {
      * Cancela o ingresso
      */
     public void cancelar() {
-        if (isValido()) {
-            this.status = StatusIngresso.CANCELADO;
-        }
-    }
-
-    /**
-     * Reembolsa o ingresso
-     */
-    public void reembolsar() {
-        if (isValido() || StatusIngresso.UTILIZADO.equals(this.status)) {
-            this.status = StatusIngresso.REEMBOLSADO;
+        if (Status.RESERVADO.equals(this.status) || Status.PAGO.equals(this.status)) {
+            this.status = Status.CANCELADO;
         }
     }
 
@@ -181,14 +177,16 @@ public class Ingresso {
      * Retorna a data da sessão formatada
      */
     public String getDataSessaoFormatada() {
-        return this.sessao.getDataSessao().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        return this.sessao.getDataSessao()
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
     /**
      * Retorna o horário da sessão formatado
      */
     public String getHorarioSessaoFormatado() {
-        return this.sessao.getHorario().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        return this.sessao.getHorario()
+                .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     /**
@@ -199,33 +197,62 @@ public class Ingresso {
     }
 
     /**
-     * Retorna informações resumidas do ingresso
+     * Retorna o nome da área
      */
-    public String getResumo() {
-        return String.format("%s - %s - %s - Poltrona %d", 
-            getNomeEvento(),
-            getDataSessaoFormatada(),
-            getHorarioSessaoFormatado(),
-            this.numeroPoltrona);
+    public String getNomeArea() {
+        return this.area.getNome();
     }
 
     /**
-     * Verifica se o ingresso pertence a um usuário específico
+     * Retorna um resumo do ingresso
+     */
+    public String getResumo() {
+        return String.format("%s - %s - %s - Poltrona %d - %s", getNomeEvento(),
+                getDataSessaoFormatada(), getHorarioSessaoFormatado(), this.numeroPoltrona,
+                getNomeArea());
+    }
+
+    /**
+     * Verifica se o ingresso pertence ao usuário
      */
     public boolean pertenceAoUsuario(Long usuarioId) {
-        return this.usuario != null && this.usuario.getId().equals(usuarioId);
+        return this.usuario.getId().equals(usuarioId);
     }
 
     /**
      * Retorna a chave única de ocupação da poltrona
-     * Formato: evento_id:data:horario:area_id:poltrona_id
      */
     public String getChaveOcupacao() {
-        return String.format("%d:%s:%s:%d:%d",
-            this.sessao.getEvento().getId(),
-            this.sessao.getDataSessao(),
-            this.sessao.getHorario(),
-            this.area.getId(),
-            this.numeroPoltrona);
+        return String.format("%d-%s-%s-%d-%d", this.sessao.getEvento().getId(),
+                this.sessao.getDataSessao(), this.sessao.getHorario(), this.area.getId(),
+                this.numeroPoltrona);
     }
-} 
+
+    /**
+     * Verifica se o ingresso está pago
+     */
+    public boolean isPago() {
+        return Status.PAGO.equals(this.status);
+    }
+
+    /**
+     * Verifica se o ingresso está reservado
+     */
+    public boolean isReservado() {
+        return Status.RESERVADO.equals(this.status);
+    }
+
+    /**
+     * Verifica se o ingresso foi utilizado
+     */
+    public boolean isUtilizado() {
+        return Status.UTILIZADO.equals(this.status);
+    }
+
+    /**
+     * Verifica se o ingresso foi cancelado
+     */
+    public boolean isCancelado() {
+        return Status.CANCELADO.equals(this.status);
+    }
+}
