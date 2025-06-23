@@ -19,15 +19,17 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.teatro.config.TestConfig;
+import com.teatro.config.TestSecurityConfig;
 import com.teatro.dto.SessaoDTO;
 import com.teatro.model.Sessao.TipoSessao;
 import com.teatro.service.SessaoService;
 
 @WebMvcTest(SessaoController.class)
-@Import(TestConfig.class)
+@Import(TestSecurityConfig.class)
+@ActiveProfiles("test")
 class SessaoControllerTest {
 
   @Autowired
@@ -67,6 +69,12 @@ class SessaoControllerTest {
   @DisplayName("Deve criar sessão com sucesso")
   void deveCriarSessao() throws Exception {
     SessaoDTO sessaoRequest = new SessaoDTO();
+    sessaoRequest.setNome("Sessão Teste");
+    sessaoRequest.setTipoSessao(TipoSessao.MANHA);
+    sessaoRequest.setDataSessao(LocalDate.of(2024, 1, 15));
+    sessaoRequest.setHorario(java.time.LocalTime.of(14, 30));
+    sessaoRequest.setEventoId(1L);
+    
     SessaoDTO sessaoResponse = new SessaoDTO();
     Mockito.when(sessaoService.cadastrarSessao(any(SessaoDTO.class))).thenReturn(sessaoResponse);
 
@@ -80,6 +88,12 @@ class SessaoControllerTest {
   @DisplayName("Deve atualizar sessão com sucesso")
   void deveAtualizarSessao() throws Exception {
     SessaoDTO sessaoRequest = new SessaoDTO();
+    sessaoRequest.setNome("Sessão Atualizada");
+    sessaoRequest.setTipoSessao(TipoSessao.TARDE);
+    sessaoRequest.setDataSessao(LocalDate.of(2024, 1, 16));
+    sessaoRequest.setHorario(java.time.LocalTime.of(16, 0));
+    sessaoRequest.setEventoId(1L);
+    
     SessaoDTO sessaoResponse = new SessaoDTO();
     Mockito.when(sessaoService.atualizarSessao(eq(1L), any(SessaoDTO.class)))
         .thenReturn(sessaoResponse);
@@ -138,9 +152,9 @@ class SessaoControllerTest {
   @DisplayName("Deve gerar horários dinâmicos")
   void deveGerarHorariosDinamicos() throws Exception {
     LocalDate data = LocalDate.of(2024, 1, 15);
-    List<SessaoDTO> sessoes = Collections.emptyList();
-    Mockito.when(sessaoService.gerarHorariosDinamicos(1L, data)).thenReturn(sessoes);
-    mockMvc.perform(get("/api/sessoes/horarios-dinamicos?eventoId=1&data=2024-01-15"))
+    List<String> horarios = Collections.emptyList();
+    Mockito.when(sessaoService.listarHorariosDisponiveisPorData(data)).thenReturn(horarios);
+    mockMvc.perform(get("/api/sessoes/horarios-disponiveis?data=2024-01-15"))
         .andExpect(status().isOk());
   }
 }
