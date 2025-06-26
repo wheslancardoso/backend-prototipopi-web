@@ -34,7 +34,7 @@ import jakarta.validation.Valid;
  * /api/sessoes/{id}/status - Alterar status da sessão
  */
 @RestController
-@RequestMapping("/api/sessoes")
+@RequestMapping("/sessoes")
 @CrossOrigin(origins = "*")
 @Tag(name = "Sessões", description = "Endpoints para gerenciamento de sessões teatrais")
 public class SessaoController {

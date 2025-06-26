@@ -10,6 +10,7 @@ import com.teatro.model.Usuario.TipoUsuario;
 public class LoginResponse {
 
   private String token;
+  private String tipo; // Tipo do token (Bearer)
   private String refreshToken;
   private Long usuarioId;
   private String usuarioNome;
@@ -45,6 +46,14 @@ public class LoginResponse {
 
   public void setToken(String token) {
     this.token = token;
+  }
+
+  public String getTipo() {
+    return tipo;
+  }
+
+  public void setTipo(String tipo) {
+    this.tipo = tipo;
   }
 
   public String getRefreshToken() {

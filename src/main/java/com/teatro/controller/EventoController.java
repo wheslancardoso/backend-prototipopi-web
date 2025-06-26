@@ -41,7 +41,7 @@ import jakarta.validation.Valid;
  * Estatísticas gerais
  */
 @RestController
-@RequestMapping("/api/eventos")
+@RequestMapping("/eventos")
 @CrossOrigin(origins = "*")
 @Tag(name = "Eventos", description = "Endpoints para gerenciamento de eventos teatrais")
 public class EventoController {
@@ -290,7 +290,8 @@ public class EventoController {
   public ResponseEntity<Map<String, Object>> estatisticasGerais() {
     Map<String, Object> estatisticas = new HashMap<>();
     estatisticas.put("totalEventos", eventoService.contarEventosAtivos());
-    estatisticas.put("eventosComSessoesFuturas", eventoService.listarEventosComSessoesFuturas().size());
+    estatisticas.put("eventosComSessoesFuturas",
+        eventoService.listarEventosComSessoesFuturas().size());
     return ResponseEntity.ok(estatisticas);
   }
 }

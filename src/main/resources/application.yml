@@ -31,9 +31,10 @@ spring:
         time-zone: America/Sao_Paulo
 
 # Configuração JWT
-jwt:
-    secret: teatro_web_api_secret_key_2024_muito_segura_e_unica_para_producao
-    expiration: 86400000 # 24 horas em millisegundos
+app:
+    jwt:
+        secret: teatro_web_api_secret_key_2024_muito_segura_e_unica_para_producao
+        expiration: 86400000 # 24 horas em millisegundos
 
 # Configuração Swagger/OpenAPI
 springdoc:

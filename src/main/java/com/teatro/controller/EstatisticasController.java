@@ -30,9 +30,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * Estatísticas por período
  */
 @RestController
-@RequestMapping("/api/estatisticas")
+@RequestMapping("/estatisticas")
 @CrossOrigin(origins = "*")
-@Tag(name = "Estatísticas", description = "Endpoints para estatísticas e dashboard administrativo")
+@Tag(name = "Estatísticas", description = "Endpoints para consulta de estatísticas do sistema")
 public class EstatisticasController {
 
   @Autowired

@@ -29,7 +29,7 @@ import jakarta.validation.Valid;
  * /api/areas/disponiveis/{sessaoId} - Listar áreas disponíveis para compra em uma sessão
  */
 @RestController
-@RequestMapping("/api/areas")
+@RequestMapping("/areas")
 @CrossOrigin(origins = "*")
 @Tag(name = "Áreas", description = "Endpoints para gerenciamento de áreas do teatro")
 public class AreaController {

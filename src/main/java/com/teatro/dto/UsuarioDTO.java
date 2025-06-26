@@ -83,6 +83,11 @@ public class UsuarioDTO {
     this.dataAtualizacao = usuario.getDataAtualizacao();
   }
 
+  // Método estático para converter entidade para DTO
+  public static UsuarioDTO fromEntity(Usuario usuario) {
+    return new UsuarioDTO(usuario);
+  }
+
   // Método para converter DTO para entidade (sem senha)
   public Usuario toEntity() {
     Usuario usuario = new Usuario();

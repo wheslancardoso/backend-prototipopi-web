@@ -152,6 +152,19 @@ public class UsuarioService {
   }
 
   /**
+   * Busca usuário por email
+   * 
+   * @param email Email do usuário
+   * @return Usuario encontrado
+   * @throws UsuarioNaoEncontradoException se usuário não existe
+   */
+  @Transactional(readOnly = true)
+  public Usuario buscarPorEmail(String email) {
+    return usuarioRepository.findByEmail(email).orElseThrow(
+        () -> new UsuarioNaoEncontradoException("Usuário não encontrado com email: " + email));
+  }
+
+  /**
    * Lista todos os usuários ativos
    * 
    * @return Lista de UsuarioDTO dos usuários ativos
@@ -363,7 +376,7 @@ public class UsuarioService {
   }
 
   /**
-   * Remove um usuário do sistema
+   * Remove um usuário (soft delete)
    * 
    * @param id ID do usuário
    * @throws UsuarioNaoEncontradoException se usuário não existe
@@ -371,10 +384,19 @@ public class UsuarioService {
   public void removerUsuario(Long id) {
     Usuario usuario = usuarioRepository.findById(id).orElseThrow(
         () -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
+    usuario.setAtivo(false);
+    usuarioRepository.save(usuario);
+  }
 
-    // Verifica se o usuário tem ingressos ou outras dependências
-    // TODO: Implementar verificação de dependências antes da remoção
-
-    usuarioRepository.delete(usuario);
+  /**
+   * Cadastra um novo usuário (método simplificado para compatibilidade)
+   * 
+   * @param usuarioDTO Dados do usuário
+   * @return Usuario cadastrado
+   * @throws UsuarioJaExisteException se CPF ou email já existem
+   */
+  public Usuario cadastrar(UsuarioDTO usuarioDTO) {
+    UsuarioDTO usuarioSalvo = cadastrarUsuario(usuarioDTO);
+    return buscarPorEmail(usuarioSalvo.getEmail());
   }
 }

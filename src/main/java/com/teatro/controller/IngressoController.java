@@ -34,9 +34,9 @@ import jakarta.validation.Valid;
  * /api/ingressos/verificar-disponibilidade - Verificar disponibilidade de poltronas
  */
 @RestController
-@RequestMapping("/api/ingressos")
+@RequestMapping("/ingressos")
 @CrossOrigin(origins = "*")
-@Tag(name = "Ingressos", description = "Endpoints para gerenciamento de ingressos e compras")
+@Tag(name = "Ingressos", description = "Endpoints para gerenciamento de ingressos")
 public class IngressoController {
 
   @Autowired
@@ -57,8 +57,7 @@ public class IngressoController {
   @GetMapping
   public ResponseEntity<List<IngressoDTO>> listarIngressos() {
     List<IngressoDTO> ingressos = ingressoService.listarTodosIngressos().stream()
-        .map(IngressoDTO::new)
-        .collect(Collectors.toList());
+        .map(IngressoDTO::new).collect(Collectors.toList());
     return ResponseEntity.ok(ingressos);
   }
 
@@ -75,24 +74,21 @@ public class IngressoController {
   @GetMapping("/usuario/{usuarioId}")
   public ResponseEntity<List<IngressoDTO>> listarPorUsuario(@PathVariable Long usuarioId) {
     List<IngressoDTO> ingressos = ingressoService.listarPorUsuario(usuarioId).stream()
-        .map(IngressoDTO::new)
-        .collect(Collectors.toList());
+        .map(IngressoDTO::new).collect(Collectors.toList());
     return ResponseEntity.ok(ingressos);
   }
 
   @GetMapping("/sessao/{sessaoId}")
   public ResponseEntity<List<IngressoDTO>> listarPorSessao(@PathVariable Long sessaoId) {
     List<IngressoDTO> ingressos = ingressoService.listarPorSessao(sessaoId).stream()
-        .map(IngressoDTO::new)
-        .collect(Collectors.toList());
+        .map(IngressoDTO::new).collect(Collectors.toList());
     return ResponseEntity.ok(ingressos);
   }
 
   @GetMapping("/area/{areaId}")
   public ResponseEntity<List<IngressoDTO>> listarPorArea(@PathVariable Long areaId) {
     List<IngressoDTO> ingressos = ingressoService.listarPorArea(areaId).stream()
-        .map(IngressoDTO::new)
-        .collect(Collectors.toList());
+        .map(IngressoDTO::new).collect(Collectors.toList());
     return ResponseEntity.ok(ingressos);
   }
 
@@ -119,7 +115,8 @@ public class IngressoController {
   @PostMapping("/verificar-disponibilidade")
   public ResponseEntity<List<Integer>> verificarDisponibilidade(@RequestParam Long sessaoId,
       @RequestParam Long areaId) {
-    List<Integer> poltronasDisponiveis = ingressoService.verificarPoltronasDisponiveis(sessaoId, areaId);
+    List<Integer> poltronasDisponiveis =
+        ingressoService.verificarPoltronasDisponiveis(sessaoId, areaId);
     return ResponseEntity.ok(poltronasDisponiveis);
   }
 
@@ -128,4 +125,4 @@ public class IngressoController {
     // TODO: Implementar estatísticas de ingressos
     return ResponseEntity.ok("Estatísticas de ingressos - em desenvolvimento");
   }
-} 
+}

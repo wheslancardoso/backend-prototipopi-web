@@ -30,6 +30,10 @@ public class LoginRequest {
     this.identificador = identificador;
   }
 
+  public String getEmail() {
+    return identificador; // Para compatibilidade com o sistema de autenticação
+  }
+
   public String getSenha() {
     return senha;
   }

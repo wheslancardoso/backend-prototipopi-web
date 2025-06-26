@@ -42,9 +42,9 @@ import jakarta.validation.Valid;
  * pontos de fidelidade - POST /api/usuarios/{id}/adicionar-pontos - Adicionar pontos (admin)
  */
 @RestController
-@RequestMapping("/api/usuarios")
+@RequestMapping("/usuarios")
 @CrossOrigin(origins = "*") // Configurar CORS adequadamente em produção
-@Tag(name = "Usuários", description = "Endpoints para gerenciamento de usuários e autenticação")
+@Tag(name = "Usuários", description = "Endpoints para gerenciamento de usuários")
 public class UsuarioController {
 
   @Autowired
